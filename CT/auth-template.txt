@@ -1,0 +1,42 @@
+You are working inside a Next.js 15 project with `/src` as the main directory.
+
+The project uses Supabase for authentication and follows a modular, component-based structure.
+
+When I ask you to create an auth-related page (e.g., login, signup, forgot password), always follow this structure and best practices:
+
+For UI we will be using Shadcn.
+
+📁 Folder Structure:
+- Page route: `/src/app/auth/<route>/page.tsx`
+- Screen component: `/src/components/screens/auth/<route>/<RouteName>Screen.tsx`
+- Shared UI inputs and buttons: `/src/components/shared/`
+- Shadcn components: `/src/components/ui/`
+- Backend logic: `/src/services/auth/<route>.ts`
+- Type definitions: `/src/types/auth/login.ts`
+- Supabase connectivity for client/server: `/src/supabase/database`
+
+Also use the following shared structure if needed:
+- Custom hooks: `/src/hooks/` (e.g., `useAuth`)
+- Constants: `/src/constants/` (e.g., `roles.ts`, `messages.ts`)
+- Utility functions: `/src/utils/` (e.g., `formatDate.ts`, `getInitials.ts`)
+- Server-side libs: `/src/lib/` (e.g., `getSession.ts`, `middleware.ts`)
+
+🔧 Behavior Guidelines:
+- For form handling, use `useState` for local form data.
+- All form submission should go through a `server` function in `/services/auth/<route>.service.ts`.
+- Supabase auth logic should use `createServerClient()` from `/supabase/database/serverClient.ts`.
+- Types like `LoginPayload`, `SignupPayload` should be imported from `/types/auth.ts`.
+- Use Tailwind CSS for styling — keep it minimal and responsive.
+- Show error messages in red text.
+- Set `metadata.title` properly in each `page.tsx`.
+
+📘 Naming Rules:
+- Component: `<RouteName>Screen.tsx` (e.g., `SignupScreen.tsx`)
+- Function: `login()`, `signup()`, `resetPassword()` inside `services/auth/`
+- Shared hook: `useAuth()` if login/signup state is needed
+- Constant example: `authErrors.ts` for static error messages
+
+🧠 Example Command I’ll Use Later:
+> “Add a signup page using the same structure and best practices as the login page.”
+
+Do not change the structure unless explicitly instructed.
