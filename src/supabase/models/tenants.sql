@@ -1,39 +1,53 @@
--- Create tenants table
+-- Create tenants table (IMPROVED: No redundant owner_id)
 CREATE TABLE IF NOT EXISTS tenants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    owner_id UUID REFERENCES auth.users(id) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_tenants_owner_id ON tenants(owner_id);
+-- Note: No owner_id column - ownership is managed through members table with OWNER role
 
 -- Enable Row Level Security
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 
 ----------------------------------
--- Create policies
+-- Create policies (Role-based ownership)
 ----------------------------------
-CREATE POLICY "Tenants are viewable by members" ON tenants
+
+-- Users can view tenants they are members of
+CREATE POLICY "Users can view tenants they belong to" ON tenants
     FOR SELECT
     USING (
-        EXISTS (
-            SELECT 1 FROM members
-            WHERE members.tenant_id = tenants.id
-            AND members.user_id = auth.uid()
+        id IN (
+            SELECT tenant_id FROM members 
+            WHERE user_id = auth.uid()
         )
     );
 
-CREATE POLICY "Tenants are insertable by authenticated users" ON tenants
+-- Authenticated users can create tenants
+CREATE POLICY "Authenticated users can create tenants" ON tenants
     FOR INSERT
     WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Tenants are updatable by owner" ON tenants
+-- Only tenant owners can update their tenant (ownership via members.role = 'OWNER')
+CREATE POLICY "Tenant owners can update their tenant" ON tenants
     FOR UPDATE
     USING (
-        owner_id = auth.uid()
+        id IN (
+            SELECT tenant_id FROM members 
+            WHERE user_id = auth.uid() AND role = 'OWNER'
+        )
+    );
+
+-- Only tenant owners can delete their tenant
+CREATE POLICY "Tenant owners can delete their tenant" ON tenants
+    FOR DELETE
+    USING (
+        id IN (
+            SELECT tenant_id FROM members 
+            WHERE user_id = auth.uid() AND role = 'OWNER'
+        )
     );
 
 -- Create updated_at trigger

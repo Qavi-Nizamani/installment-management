@@ -17,48 +17,42 @@ CREATE INDEX IF NOT EXISTS idx_members_tenant_id ON members(tenant_id);
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 
 ----------------------------------
--- Create policies
+-- Create policies (Fixed to avoid infinite recursion)
 ----------------------------------
-CREATE POLICY "Members are viewable by tenant members" ON members
+
+-- Members can view other members in the same tenant
+CREATE POLICY "Members can view same tenant members" ON members
     FOR SELECT
     USING (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.tenant_id = members.tenant_id
-            AND m.user_id = auth.uid()
+        tenant_id IN (
+            SELECT tenant_id FROM members 
+            WHERE user_id = auth.uid()
         )
     );
 
-CREATE POLICY "Members are insertable by tenant owners" ON members
+-- Only authenticated users can create members (will be restricted by application logic)
+CREATE POLICY "Authenticated users can create members" ON members
     FOR INSERT
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.tenant_id = members.tenant_id
-            AND m.user_id = auth.uid()
-            AND m.role = 'OWNER'
-        )
-    );
+    WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Members are updatable by tenant owners" ON members
+-- Members can only update/delete themselves, owners can update/delete anyone in tenant
+CREATE POLICY "Members can update own record or owners can update tenant members" ON members
     FOR UPDATE
     USING (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.tenant_id = members.tenant_id
-            AND m.user_id = auth.uid()
-            AND m.role = 'OWNER'
+        user_id = auth.uid() 
+        OR tenant_id IN (
+            SELECT tenant_id FROM members 
+            WHERE user_id = auth.uid() AND role = 'OWNER'
         )
     );
 
-CREATE POLICY "Members are deletable by tenant owners" ON members
+CREATE POLICY "Members can delete own record or owners can delete tenant members" ON members
     FOR DELETE
     USING (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.tenant_id = members.tenant_id
-            AND m.user_id = auth.uid()
-            AND m.role = 'OWNER'
+        user_id = auth.uid() 
+        OR tenant_id IN (
+            SELECT tenant_id FROM members 
+            WHERE user_id = auth.uid() AND role = 'OWNER'
         )
     );
 

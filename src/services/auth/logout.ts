@@ -3,17 +3,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/supabase/database/server";
-import { SignupPayload, LoginResponse } from "@/types/auth";
+import { LoginResponse } from "@/types/auth";
 
-export async function signup(data: SignupPayload): Promise<LoginResponse> {
+export async function logout(): Promise<LoginResponse> {
   const cookieStore = cookies();
   const supabase = await createClient(cookieStore);
 
   try {
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-    });
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
       return {
@@ -24,7 +21,7 @@ export async function signup(data: SignupPayload): Promise<LoginResponse> {
 
     return {
       success: true,
-      message: "Account created successfully! Please complete your workspace setup.",
+      message: "Successfully logged out",
     };
   } catch {
     return {
@@ -34,6 +31,6 @@ export async function signup(data: SignupPayload): Promise<LoginResponse> {
   }
 }
 
-export async function redirectAfterSignup() {
-  redirect("/onboarding/setup-workspace");
+export async function redirectAfterLogout() {
+  redirect("/auth/login");
 } 
