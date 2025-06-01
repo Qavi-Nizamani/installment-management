@@ -1,8 +1,8 @@
 import { Metadata } from "next";
-import { StatsCards } from "@/components/dashboard/StatsCards";
-import { RevenueChart } from "@/components/dashboard/RevenueChart";
-import { RecentInstallments } from "@/components/dashboard/RecentInstallments";
-import { OverdueAlert } from "@/components/dashboard/OverdueAlert";
+import { StatsCards } from "@/components/screens/dashboard/StatsCards";
+import { RevenueChart } from "@/components/screens/dashboard/RevenueChart";
+import { RecentInstallments } from "@/components/screens/dashboard/RecentInstallments";
+import { OverdueAlert } from "@/components/screens/dashboard/OverdueAlert";
 
 export const metadata: Metadata = {
   title: "Dashboard - Installment Management",

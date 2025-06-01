@@ -1,0 +1,72 @@
+You are working inside a Next.js 15 project with `/src` as the main directory.
+
+The project uses Supabase for authentication and follows a modular, component-based structure.
+
+## AUTH PAGES
+
+When I ask you to create an auth-related page (e.g., login, signup, forgot password), always follow this structure and best practices:
+
+For UI we will be using Shadcn.
+
+📁 Folder Structure:
+- Page route: `/src/app/auth/<route>/page.tsx`
+- Screen component: `/src/components/screens/auth/<route>/<RouteName>Screen.tsx`
+- Shared UI inputs and buttons: `/src/components/shared/`
+- Shadcn components: `/src/components/ui/`
+- Backend logic: `/src/services/auth/<route>.ts`
+- Type definitions: `/src/types/auth.ts`
+- Supabase connectivity for client/server: `/src/supabase/database`
+
+🔧 Auth Behavior Guidelines:
+- For form handling, use `useState` for local form data.
+- All form submission should go through a `server` function in `/services/auth/<route>.ts`.
+- Supabase auth logic should use `createServerClient()` from `/supabase/database/server.ts`.
+- Types like `LoginPayload`, `SignupPayload` should be imported from `/types/auth.ts`.
+- Use Tailwind CSS for styling — keep it minimal and responsive.
+- Show error messages in red text.
+- Set `metadata.title` properly in each `page.tsx`.
+
+## DASHBOARD PAGES
+
+When I ask you to create dashboard-related pages, always follow this structure and best practices:
+
+📁 Dashboard Folder Structure:
+- Page route: `/src/app/(dashboard)/dashboard/<route>/page.tsx`
+- Screen component: `/src/components/screens/dashboard/<RouteName>Screen.tsx` OR `/src/components/screens/<route>/<RouteName>Screen.tsx`
+- Dashboard components: `/src/components/screens/dashboard/` (for shared dashboard components)
+- Layout components: `/src/components/layout/` (Sidebar, Header, etc.)
+- Shared UI: `/src/components/shared/`
+- Shadcn components: `/src/components/ui/`
+- Backend logic: `/src/services/<domain>/<action>.ts`
+- Type definitions: `/src/types/<domain>.ts`
+
+🔧 Dashboard Behavior Guidelines:
+- All dashboard routes should be in `(dashboard)` folder for protected routes
+- Use the dashboard layout with Sidebar and Header components
+- Create reusable dashboard components in `/src/components/screens/dashboard/`
+- For data tables, use Card components with proper spacing
+- Include stats cards, search functionality, and action buttons
+- Use proper loading states and error handling
+- Follow responsive design patterns
+- Use lucide-react icons consistently
+- Implement hover effects and smooth transitions
+
+📁 Shared Structure (for both Auth and Dashboard):
+- Custom hooks: `/src/hooks/` (e.g., `useAuth`, `useCustomers`)
+- Constants: `/src/constants/` (e.g., `roles.ts`, `messages.ts`)
+- Utility functions: `/src/utils/` (e.g., `formatDate.ts`, `getInitials.ts`)
+- Server-side libs: `/src/lib/` (e.g., `getSession.ts`, `middleware.ts`)
+
+📘 Naming Rules:
+- Auth Component: `<RouteName>Screen.tsx` (e.g., `SignupScreen.tsx`)
+- Dashboard Component: `<RouteName>Screen.tsx` (e.g., `CustomersScreen.tsx`)
+- Dashboard Shared: Descriptive names (e.g., `StatsCards.tsx`, `RevenueChart.tsx`)
+- Functions: `login()`, `signup()`, `getCustomers()`, `createPlan()` inside appropriate services
+- Hooks: `useAuth()`, `useCustomers()`, `usePlans()` etc.
+
+🧠 Example Commands:
+> "Add a signup page using the same structure and best practices as the login page."
+> "Create a customers dashboard page with data table and stats cards."
+> "Add an installments management page with filtering and search."
+
+Do not change the structure unless explicitly instructed.
