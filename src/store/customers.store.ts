@@ -11,7 +11,7 @@ import {
   deleteCustomer,
   searchCustomers,
   getCustomerStats
-} from '@/services/customers.service';
+} from '@/services/customers/customers.service';
 
 interface CustomersState {
   // Data
@@ -69,6 +69,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     try {
       const response = await getCustomers();
       
+      console.log("response", response);
       if (response.success) {
         set({ customers: response.data || [], isLoading: false });
       } else {

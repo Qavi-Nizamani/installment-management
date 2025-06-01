@@ -13,6 +13,7 @@ import {
 import { useCustomersStore } from "@/store/customers.store";
 import CustomerStatsCards from "./CustomerStatsCards";
 import CustomerList from "./CustomerList";
+import AddCustomerModal from "./AddCustomerModal";
 
 export default function CustomersScreen() {
   const {
@@ -30,6 +31,7 @@ export default function CustomersScreen() {
   } = useCustomersStore();
 
   const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     // Fetch customers and stats on component mount
@@ -59,7 +61,7 @@ export default function CustomersScreen() {
             Manage your customer base and track their installment plans
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Customer
         </Button>
@@ -107,6 +109,12 @@ export default function CustomersScreen() {
         customers={customers}
         isLoading={isLoading}
         searchTerm={searchTerm}
+      />
+
+      {/* Add Customer Modal */}
+      <AddCustomerModal 
+        open={isAddModalOpen} 
+        onOpenChange={setIsAddModalOpen} 
       />
     </div>
   );

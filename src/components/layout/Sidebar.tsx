@@ -33,7 +33,7 @@ const navigation = [
   },
   {
     name: "Installment Plans",
-    href: "/dashboard/plans",
+    href: "/dashboard/installment-plans",
     icon: CreditCard,
   },
   {
