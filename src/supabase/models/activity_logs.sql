@@ -19,7 +19,9 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created
 -- Enable Row Level Security
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 
+----------------------------------
 -- Create policies
+----------------------------------
 CREATE POLICY "Activity logs are viewable by tenant members" ON activity_logs
     FOR SELECT
     USING (

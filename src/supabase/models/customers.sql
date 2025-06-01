@@ -17,7 +17,9 @@ CREATE INDEX IF NOT EXISTS idx_customers_national_id ON customers(national_id);
 -- Enable Row Level Security
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 
+----------------------------------
 -- Create policies
+----------------------------------
 CREATE POLICY "Customers are viewable by tenant members" ON customers
     FOR SELECT
     USING (

@@ -24,7 +24,9 @@ CREATE INDEX IF NOT EXISTS idx_installment_plans_start_date ON installment_plans
 -- Enable Row Level Security
 ALTER TABLE installment_plans ENABLE ROW LEVEL SECURITY;
 
+----------------------------------
 -- Create policies
+----------------------------------
 CREATE POLICY "Installment plans are viewable by tenant members" ON installment_plans
     FOR SELECT
     USING (

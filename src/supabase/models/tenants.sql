@@ -13,7 +13,9 @@ CREATE INDEX IF NOT EXISTS idx_tenants_owner_id ON tenants(owner_id);
 -- Enable Row Level Security
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 
+----------------------------------
 -- Create policies
+----------------------------------
 CREATE POLICY "Tenants are viewable by members" ON tenants
     FOR SELECT
     USING (

@@ -24,7 +24,9 @@ CREATE INDEX IF NOT EXISTS idx_installments_status ON installments(status);
 -- Enable Row Level Security
 ALTER TABLE installments ENABLE ROW LEVEL SECURITY;
 
+----------------------------------
 -- Create policies
+----------------------------------
 CREATE POLICY "Installments are viewable by tenant members" ON installments
     FOR SELECT
     USING (
