@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
+import { MEMBER_ROLE, MEMBER_ROLE_HIERARCHY } from "@/constants/member.constants";
 
 export interface TenantContext {
   userId: string;
   tenantId: string;
-  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  role: MEMBER_ROLE;
 }
 
 /**
@@ -17,17 +18,20 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     const supabase = await createClient(cookieStore);
 
     // Get the authenticated user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
       return null;
     }
 
     // Get the user's tenant membership
     const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('tenant_id, role')
-      .eq('user_id', user.id)
+      .from("members")
+      .select("tenant_id, role")
+      .eq("user_id", user.id)
       .single();
 
     if (memberError || !member) {
@@ -37,10 +41,10 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     return {
       userId: user.id,
       tenantId: member.tenant_id,
-      role: member.role as 'OWNER' | 'ADMIN' | 'MEMBER'
+      role: member.role as MEMBER_ROLE,
     };
   } catch (error) {
-    console.error('Error getting tenant context:', error);
+    console.error("Error getting tenant context:", error);
     return null;
   }
 }
@@ -48,15 +52,17 @@ export async function getTenantContext(): Promise<TenantContext | null> {
 /**
  * Ensure user has access to a specific tenant
  */
-export async function requireTenantAccess(requiredTenantId?: string): Promise<TenantContext> {
+export async function requireTenantAccess(
+  requiredTenantId?: string
+): Promise<TenantContext> {
   const context = await getTenantContext();
-  
+
   if (!context) {
-    throw new Error('Authentication required');
+    throw new Error("Authentication required");
   }
 
   if (requiredTenantId && context.tenantId !== requiredTenantId) {
-    throw new Error('Access denied to this tenant');
+    throw new Error("Access denied to this tenant");
   }
 
   return context;
@@ -65,11 +71,13 @@ export async function requireTenantAccess(requiredTenantId?: string): Promise<Te
 /**
  * Ensure user has a specific role or higher
  */
-export async function requireRole(minimumRole: 'MEMBER' | 'ADMIN' | 'OWNER'): Promise<TenantContext> {
+export async function requireRole(
+  minimumRole: MEMBER_ROLE
+): Promise<TenantContext> {
   const context = await requireTenantAccess();
-  
-  const roleHierarchy = { 'MEMBER': 1, 'ADMIN': 2, 'OWNER': 3 };
-  
+
+  const roleHierarchy = MEMBER_ROLE_HIERARCHY;
+
   if (roleHierarchy[context.role] < roleHierarchy[minimumRole]) {
     throw new Error(`Role ${minimumRole} or higher required`);
   }
@@ -84,5 +92,5 @@ export function withTenantFilter(
   query: any, // eslint-disable-line @typescript-eslint/no-explicit-any
   tenantId: string
 ) {
-  return query.eq('tenant_id', tenantId);
-} 
+  return query.eq("tenant_id", tenantId);
+}

@@ -1,0 +1,11 @@
+export enum MEMBER_ROLE {
+  MEMBER = "MEMBER",
+  ADMIN = "ADMIN",
+  OWNER = "OWNER",
+}
+
+export const MEMBER_ROLE_HIERARCHY = {
+  [MEMBER_ROLE.MEMBER]: 1,
+  [MEMBER_ROLE.ADMIN]: 2,
+  [MEMBER_ROLE.OWNER]: 3,
+} as const;
