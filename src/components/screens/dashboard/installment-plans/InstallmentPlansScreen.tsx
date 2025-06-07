@@ -156,6 +156,14 @@ export function InstallmentPlansScreen() {
         loading={loading}
         onPlanUpdated={handlePlanUpdated}
         onPlanDeleted={handlePlanDeleted}
+        onPlanEdit={(plan) => {
+          // TODO: Open edit modal with plan data
+          console.log('Edit plan:', plan);
+        }}
+        onPlanView={(plan) => {
+          // TODO: Navigate to plan details page or open view modal
+          console.log('View plan:', plan);
+        }}
       />
 
       {/* Create Plan Modal */}
