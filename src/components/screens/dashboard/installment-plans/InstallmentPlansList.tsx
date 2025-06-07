@@ -75,24 +75,39 @@ export function InstallmentPlansList({
           <CardTitle>Installment Plans</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-3 w-1/4" />
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-full" />
-                  </div>
-                  <Skeleton className="h-2 w-full" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Total Price</TableHead>
+                <TableHead>Monthly Amount</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Start Date</TableHead>
+                <TableHead>Remaining</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...Array(5)].map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell className="flex items-center space-x-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     );
@@ -125,115 +140,121 @@ export function InstallmentPlansList({
         <CardTitle>Installment Plans</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {plans.map((plan) => {
-            const statusConfig = getStatusConfig(plan.status || 'ACTIVE');
-            const StatusIcon = statusConfig.icon;
-            const progress = plan.total_months > 0 
-              ? ((plan.months_paid || 0) / plan.total_months) * 100 
-              : 0;
-            const remainingAmount = plan.remaining_amount || 0;
-            const customerName = plan.customer?.name || 'Unknown Customer';
-            const customerInitials = getInitials(customerName);
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Customer</TableHead>
+              <TableHead>Plan</TableHead>
+              <TableHead>Total Price</TableHead>
+              <TableHead>Monthly Amount</TableHead>
+              <TableHead>Progress</TableHead>
+              <TableHead>Start Date</TableHead>
+              <TableHead>Remaining</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {plans.map((plan) => {
+              const statusConfig = getStatusConfig(plan.status || 'ACTIVE');
+              const StatusIcon = statusConfig.icon;
+              const remainingAmount = plan.remaining_amount || 0;
+              const customerName = plan.customer?.name || 'Unknown Customer';
+              const customerInitials = getInitials(customerName);
 
-            return (
-              <div
-                key={plan.id}
-                className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={`/avatars/${customerInitials.toLowerCase()}.png`} />
-                  <AvatarFallback>
-                    {customerInitials}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{plan.title}</h3>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <User className="w-4 h-4 mr-1" />
-                        {customerName}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900">
-                        ${plan.total_price.toLocaleString()}
-                      </p>
-                      <Badge variant="secondary" className={statusConfig.color}>
-                        <StatusIcon className={`w-3 h-3 mr-1 ${statusConfig.iconColor}`} />
-                        {plan.status || 'Active'}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Monthly Payment:</span>
-                      <p className="font-semibold">
-                        ${(plan.monthly_amount || 0).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Progress:</span>
-                      <p className="font-semibold">
-                        {plan.months_paid || 0}/{plan.total_months} months
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Start Date:</span>
-                      <p className="font-semibold">
-                        {new Date(plan.start_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Remaining:</span>
-                      <p className="font-semibold text-orange-600">
-                        ${remainingAmount.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Payment Progress</span>
-                      <span className="font-medium">{progress.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          plan.status === "COMPLETED" ? "bg-green-500" : "bg-blue-500"
-                        }`}
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 text-sm">
+              return (
+                <TableRow key={plan.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={`/avatars/${customerInitials.toLowerCase()}.png`} />
+                        <AvatarFallback className="text-xs">
+                          {customerInitials}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
-                        <span className="text-gray-600">Upfront: </span>
-                        <span className="font-semibold text-green-600">
-                          ${plan.upfront_paid.toLocaleString()}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Interest: </span>
-                        <span className="font-semibold text-blue-600">
-                          {plan.monthly_percentage}%/month
-                        </span>
+                        <div className="font-medium">{customerName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {plan.customer?.phone || 'No phone'}
+                        </div>
                       </div>
                     </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">{plan.title}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {plan.monthly_percentage}% interest
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">
+                      ${plan.total_price.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      ${plan.upfront_paid.toLocaleString()} upfront
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">
+                      ${(plan.monthly_amount || 0).toFixed(2)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {plan.total_months} months
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">
+                      {plan.months_paid || 0}/{plan.total_months}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {plan.total_months > 0 
+                        ? (((plan.months_paid || 0) / plan.total_months) * 100).toFixed(1)
+                        : 0}% paid
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">
+                      {new Date(plan.start_date).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {plan.next_due_date 
+                        ? `Next: ${new Date(plan.next_due_date).toLocaleDateString()}`
+                        : 'No payments due'
+                      }
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium text-orange-600">
+                      ${remainingAmount.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      remaining
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <Badge variant="secondary" className={statusConfig.color}>
+                      <StatusIcon className={`w-3 h-3 mr-1 ${statusConfig.iconColor}`} />
+                      {plan.status || 'ACTIVE'}
+                    </Badge>
+                  </TableCell>
+                  
+                  <TableCell>
                     <Button variant="ghost" size="sm">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
