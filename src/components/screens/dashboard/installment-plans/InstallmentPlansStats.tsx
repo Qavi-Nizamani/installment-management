@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Clock, DollarSign, TrendingUp, FileText } from "lucide-react";
+import { Clock, DollarSign, TrendingUp, FileText } from "lucide-react";
 import type { InstallmentPlan } from "@/types/installment-plans";
 
 interface InstallmentPlansStatsProps {
@@ -18,7 +18,6 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
   
   // Calculate revenue based on business model
   const totalMyRevenue = plans.reduce((sum, p) => sum + (p.my_revenue || 0), 0);
-  const totalInterestRevenue = plans.reduce((sum, p) => sum + (p.total_interest || 0), 0);
   const totalFinanceAmount = plans.reduce((sum, p) => sum + p.finance_amount, 0);
 
   // Calculate new plans this month
@@ -83,8 +82,8 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
             {productOwnerPlans.length > 0 && financerOnlyPlans.length > 0 
               ? `${productOwnerPlans.length} owned, ${financerOnlyPlans.length} financed`
               : productOwnerPlans.length > 0 
-                ? 'Product sales + interest'
-                : 'Interest only'
+                ? 'Product sales + profit'
+                : 'Profit only'
             }
           </p>
         </CardContent>

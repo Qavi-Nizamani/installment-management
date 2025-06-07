@@ -155,21 +155,21 @@ export interface BusinessModelConfig {
   type: BusinessModel;
   label: string;
   description: string;
-  revenueCalculation: 'FULL_PAYMENTS' | 'INTEREST_ONLY';
+  revenueCalculation: 'FULL_PAYMENTS' | 'PROFIT_ONLY';
 }
 
 export const BUSINESS_MODEL_CONFIGS: Record<BusinessModel, BusinessModelConfig> = {
   PRODUCT_OWNER: {
     type: 'PRODUCT_OWNER',
     label: 'Product Owner',
-    description: 'I sell the product and provide financing',
+    description: 'I sell the product and provide Shariah-compliant trade financing',
     revenueCalculation: 'FULL_PAYMENTS'
   },
   FINANCER_ONLY: {
     type: 'FINANCER_ONLY',
-    label: 'Financer Only', 
-    description: 'I only provide financing for someone else\'s product',
-    revenueCalculation: 'INTEREST_ONLY'
+    label: 'Trade Financier', 
+    description: 'I provide Shariah-compliant trade financing for someone else\'s product',
+    revenueCalculation: 'PROFIT_ONLY'
   }
 };
 

@@ -255,7 +255,7 @@ export function InstallmentPlansList({
                     <TableCell>
                       <div className="font-medium">{plan.title}</div>
                       <div className="text-sm text-muted-foreground">
-                        {plan.monthly_percentage}% interest
+                        {plan.monthly_percentage}% profit
                       </div>
                     </TableCell>
 
@@ -266,7 +266,7 @@ export function InstallmentPlansList({
                       <div className="text-sm text-muted-foreground">
                         {plan.business_model === 'PRODUCT_OWNER' 
                           ? 'Full revenue' 
-                          : 'Interest only'
+                          : 'Profit only'
                         }
                       </div>
                     </TableCell>
@@ -305,7 +305,7 @@ export function InstallmentPlansList({
                         ${(plan.my_revenue || 0).toFixed(2)}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {plan.business_model === 'PRODUCT_OWNER' ? 'total earned' : 'interest earned'}
+                        {plan.business_model === 'PRODUCT_OWNER' ? 'total earned' : 'profit earned'}
                       </div>
                     </TableCell>
                     

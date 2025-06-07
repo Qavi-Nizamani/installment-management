@@ -81,7 +81,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     }));
   }, [formData.total_price, formData.upfront_paid]);
 
-  // Calculate preview amounts using simple interest formula
+  // Calculate preview amounts using trade profit formula
   const getPreviewAmounts = () => {
     const financeAmount = parseFloat(formData.finance_amount) || 0;
     const monthlyPercentage = parseFloat(formData.monthly_percentage) || 0;
@@ -91,9 +91,9 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
       return { monthlyInstallment: 0, futureValue: 0, totalAmount: 0 };
     }
     
-    // Simple Interest: Total Interest = Principal × Rate × Time
-    const totalInterest = financeAmount * (monthlyPercentage / 100) * totalMonths;
-    const futureValue = financeAmount + totalInterest;
+    // Trade Profit: Total Profit = Principal × Profit Rate × Time
+    const totalProfit = financeAmount * (monthlyPercentage / 100) * totalMonths;
+    const futureValue = financeAmount + totalProfit;
     
     // Monthly Installment = Total Amount / Total Months
     const monthlyInstallment = futureValue / totalMonths;
@@ -133,7 +133,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
       newErrors.upfront_paid = "Upfront payment must be less than total price";
     }
     if (!formData.monthly_percentage || parseFloat(formData.monthly_percentage) < 0) {
-      newErrors.monthly_percentage = "Monthly percentage must be 0 or greater";
+      newErrors.monthly_percentage = "Monthly profit must be 0 or greater";
     }
     if (!formData.total_months || parseInt(formData.total_months) <= 0) {
       newErrors.total_months = "Total months must be greater than 0";
@@ -239,16 +239,16 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 </SelectItem>
                 <SelectItem value="FINANCER_ONLY">
                   <div className="flex flex-col">
-                    <span className="font-medium">Financer Only</span>
-                    <span className="text-xs text-muted-foreground">I only provide financing for someone else&apos;s product</span>
+                    <span className="font-medium">Trade Financier</span>
+                    <span className="text-xs text-muted-foreground">I provide Shariah-compliant trade financing for someone else&apos;s product</span>
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500">
               {formData.business_model === 'PRODUCT_OWNER' 
-                ? "Your revenue = upfront payment + all installment payments (full product price + interest)"
-                : "Your revenue = interest portion only (monthly percentage on financed amount)"
+                ? "Your revenue = upfront payment + all installment payments (full product price + profit)"
+                : "Your revenue = profit portion only (monthly percentage on financed amount)"
               }
             </p>
           </div>
@@ -328,7 +328,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="monthly_percentage">Monthly Interest (%) *</Label>
+              <Label htmlFor="monthly_percentage">Monthly Profit (%) *</Label>
               <Input
                 id="monthly_percentage"
                 type="number"
@@ -339,6 +339,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 placeholder="2.5"
               />
               {errors.monthly_percentage && <p className="text-red-500 text-sm">{errors.monthly_percentage}</p>}
+              <p className="text-xs text-gray-500">Shariah-compliant trade profit percentage per month</p>
             </div>
 
             <div className="space-y-2">
@@ -389,7 +390,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                   </p>
                 </div>
                 <div>
-                  <span className="text-blue-700">Total Interest:</span>
+                  <span className="text-blue-700">Total Profit:</span>
                   <p className="font-bold text-blue-900">
                     ${(previewAmounts.futureValue - parseFloat(formData.finance_amount || "0")).toFixed(2)}
                   </p>
@@ -402,7 +403,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 </div>
                 <div>
                   <span className="text-blue-700">
-                    {formData.business_model === 'PRODUCT_OWNER' ? 'Your Total Revenue:' : 'Your Interest Revenue:'}
+                    {formData.business_model === 'PRODUCT_OWNER' ? 'Your Total Revenue:' : 'Your Profit Revenue:'}
                   </span>
                   <p className="font-bold text-green-900">
                     ${formData.business_model === 'PRODUCT_OWNER' 
@@ -413,7 +414,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 </div>
               </div>
               <p className="text-xs text-blue-600">
-                *Calculated using simple interest: Interest = {formData.finance_amount} × {formData.monthly_percentage}% × {formData.total_months}
+                *Calculated using trade profit: Profit = {formData.finance_amount} × {formData.monthly_percentage}% × {formData.total_months}
               </p>
             </div>
           )}

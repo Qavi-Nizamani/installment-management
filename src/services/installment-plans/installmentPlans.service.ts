@@ -340,19 +340,19 @@ export async function searchInstallmentPlans(
 }
 
 /**
- * Calculate Future Value using simple interest formula
+ * Calculate Future Value using trade profit formula
  */
 function calculateFutureValue(financeAmount: number, monthlyPercentage: number, totalMonths: number): number {
   if (monthlyPercentage === 0) {
-    return financeAmount; // No interest
+    return financeAmount; // No profit
   }
-  // Simple Interest: Total Interest = Principal × Rate × Time
-  const totalInterest = financeAmount * (monthlyPercentage / 100) * totalMonths;
-  return financeAmount + totalInterest;
+  // Trade Profit: Total Profit = Principal × Profit Rate × Time
+  const totalProfit = financeAmount * (monthlyPercentage / 100) * totalMonths;
+  return financeAmount + totalProfit;
 }
 
 /**
- * Calculate monthly installment amount using simple interest
+ * Calculate monthly installment amount using trade profit
  */
 function calculateMonthlyInstallment(financeAmount: number, monthlyPercentage: number, totalMonths: number): number {
   const futureValue = calculateFutureValue(financeAmount, monthlyPercentage, totalMonths);
@@ -374,28 +374,28 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
       .eq('installment_plan_id', planId)
       .order('due_date', { ascending: true });
 
-    // Calculate monthly amount using simple interest formula
+    // Calculate monthly amount using trade profit formula
     const monthlyAmount = calculateMonthlyInstallment(plan.finance_amount, plan.monthly_percentage, plan.total_months);
     
     const paidInstallments = installments?.filter(i => i.status === 'PAID') || [];
     const monthsPaid = paidInstallments.length;
     const totalPaid = plan.upfront_paid + paidInstallments.reduce((sum, i) => sum + i.amount_paid, 0);
     
-    // Calculate remaining amount using the simple interest formula
+    // Calculate remaining amount using the trade profit formula
     const totalAmountDue = plan.upfront_paid + calculateFutureValue(plan.finance_amount, plan.monthly_percentage, plan.total_months);
     const remainingAmount = totalAmountDue - totalPaid;
 
     // Calculate revenue based on business model
-    const totalInterest = calculateFutureValue(plan.finance_amount, plan.monthly_percentage, plan.total_months) - plan.finance_amount;
+    const totalProfit = calculateFutureValue(plan.finance_amount, plan.monthly_percentage, plan.total_months) - plan.finance_amount;
     let myRevenue = 0;
     
     if (plan.business_model === 'PRODUCT_OWNER') {
-      // Product owner gets: upfront payment + all installment payments (product price + interest)
+      // Product owner gets: upfront payment + all installment payments (product price + profit)
       myRevenue = totalPaid;
     } else {
-      // Financer only gets: interest portion of paid installments
-      const interestPerInstallment = totalInterest / plan.total_months;
-      myRevenue = monthsPaid * interestPerInstallment;
+      // Financer only gets: profit portion of paid installments
+      const profitPerInstallment = totalProfit / plan.total_months;
+      myRevenue = monthsPaid * profitPerInstallment;
     }
 
     // Determine status
@@ -426,7 +426,7 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
       total_paid: totalPaid,
       remaining_amount: remainingAmount,
       my_revenue: myRevenue,
-      total_interest: totalInterest,
+      total_interest: totalProfit,
     };
   } catch (error) {
     console.error('Error calculating plan metrics:', error);
@@ -451,7 +451,7 @@ async function generateInstallmentRecords(planId: string, plan: Pick<Installment
     const cookieStore = cookies();
     const supabase = await createClient(cookieStore);
 
-    // Calculate monthly amount using simple interest formula
+    // Calculate monthly amount using trade profit formula
     const monthlyAmount = calculateMonthlyInstallment(plan.finance_amount, plan.monthly_percentage, plan.total_months);
     const startDate = new Date(plan.start_date);
     
