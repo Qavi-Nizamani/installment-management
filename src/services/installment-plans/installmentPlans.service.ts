@@ -409,9 +409,28 @@ export async function searchInstallmentPlans(
 }
 
 /**
+ * Calculate Future Value using compound interest formula
+ */
+function calculateFutureValue(financeAmount: number, monthlyPercentage: number, totalMonths: number): number {
+  if (monthlyPercentage === 0) {
+    return financeAmount; // No interest
+  }
+  const rate = monthlyPercentage / 100;
+  return financeAmount * Math.pow(1 + rate, totalMonths);
+}
+
+/**
+ * Calculate monthly installment amount using compound interest
+ */
+function calculateMonthlyInstallment(financeAmount: number, monthlyPercentage: number, totalMonths: number): number {
+  const futureValue = calculateFutureValue(financeAmount, monthlyPercentage, totalMonths);
+  return futureValue / totalMonths;
+}
+
+/**
  * Calculate metrics for a plan (monthly amount, status, payments, etc.)
  */
-async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 'finance_amount' | 'total_months' | 'upfront_paid' | 'total_price'>) {
+async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 'finance_amount' | 'total_months' | 'upfront_paid' | 'total_price' | 'monthly_percentage'>) {
   try {
     const cookieStore = cookies();
     const supabase = await createClient(cookieStore);
@@ -423,11 +442,16 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
       .eq('installment_plan_id', planId)
       .order('due_date', { ascending: true });
 
-    const monthlyAmount = plan.finance_amount / plan.total_months;
+    // Calculate monthly amount using compound interest formula
+    const monthlyAmount = calculateMonthlyInstallment(plan.finance_amount, plan.monthly_percentage, plan.total_months);
+    
     const paidInstallments = installments?.filter(i => i.status === 'PAID') || [];
     const monthsPaid = paidInstallments.length;
     const totalPaid = plan.upfront_paid + paidInstallments.reduce((sum, i) => sum + i.amount_paid, 0);
-    const remainingAmount = plan.total_price - totalPaid;
+    
+    // Calculate remaining amount using the compound interest formula
+    const totalAmountDue = plan.upfront_paid + calculateFutureValue(plan.finance_amount, plan.monthly_percentage, plan.total_months);
+    const remainingAmount = totalAmountDue - totalPaid;
 
     // Determine status
     let status: 'ACTIVE' | 'COMPLETED' | 'OVERDUE' = 'ACTIVE';
@@ -472,12 +496,13 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
 /**
  * Generate installment records for a new plan
  */
-async function generateInstallmentRecords(planId: string, plan: Pick<InstallmentPlanRecord, 'finance_amount' | 'total_months' | 'start_date' | 'tenant_id'>) {
+async function generateInstallmentRecords(planId: string, plan: Pick<InstallmentPlanRecord, 'finance_amount' | 'total_months' | 'start_date' | 'tenant_id' | 'monthly_percentage'>) {
   try {
     const cookieStore = cookies();
     const supabase = await createClient(cookieStore);
 
-    const monthlyAmount = plan.finance_amount / plan.total_months;
+    // Calculate monthly amount using compound interest formula
+    const monthlyAmount = calculateMonthlyInstallment(plan.finance_amount, plan.monthly_percentage, plan.total_months);
     const startDate = new Date(plan.start_date);
     
     const installments = [];

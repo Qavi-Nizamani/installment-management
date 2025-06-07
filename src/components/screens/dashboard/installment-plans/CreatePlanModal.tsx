@@ -44,7 +44,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     }
   }, [isOpen]);
 
-  // Calculate finance amount when total_price or upfront_paid changes
+  // Calculate finance amount and preview amounts when form data changes
   useEffect(() => {
     const total = parseFloat(formData.total_price) || 0;
     const upfront = parseFloat(formData.upfront_paid) || 0;
@@ -55,6 +55,33 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
       finance_amount: finance.toString()
     }));
   }, [formData.total_price, formData.upfront_paid]);
+
+  // Calculate preview amounts using compound interest formula
+  const getPreviewAmounts = () => {
+    const financeAmount = parseFloat(formData.finance_amount) || 0;
+    const monthlyPercentage = parseFloat(formData.monthly_percentage) || 0;
+    const totalMonths = parseInt(formData.total_months) || 1;
+    
+    if (financeAmount <= 0 || totalMonths <= 0) {
+      return { monthlyInstallment: 0, futureValue: 0, totalAmount: 0 };
+    }
+    
+    // Future Value (FV) = finance_amount * (1 + monthly_percentage/100) ^ total_months
+    const futureValue = monthlyPercentage === 0 
+      ? financeAmount 
+      : financeAmount * Math.pow(1 + monthlyPercentage / 100, totalMonths);
+    
+    // Monthly Installment = FV / total_months
+    const monthlyInstallment = futureValue / totalMonths;
+    
+    // Total amount = upfront + future value
+    const upfront = parseFloat(formData.upfront_paid) || 0;
+    const totalAmount = upfront + futureValue;
+    
+    return { monthlyInstallment, futureValue, totalAmount };
+  };
+
+  const previewAmounts = getPreviewAmounts();
 
   const loadCustomers = async () => {
     try {
@@ -289,6 +316,36 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
               rows={3}
             />
           </div>
+
+          {/* Payment Preview Section */}
+          {parseFloat(formData.finance_amount) > 0 && parseInt(formData.total_months) > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+              <h4 className="font-medium text-blue-900">Payment Preview</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-blue-700">Monthly Installment:</span>
+                  <p className="font-bold text-blue-900">
+                    ${previewAmounts.monthlyInstallment.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-blue-700">Total Interest:</span>
+                  <p className="font-bold text-blue-900">
+                    ${(previewAmounts.futureValue - parseFloat(formData.finance_amount || "0")).toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-blue-700">Total Amount:</span>
+                  <p className="font-bold text-blue-900">
+                    ${previewAmounts.totalAmount.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-blue-600">
+                *Calculated using compound interest: FV = finance_amount × (1 + rate)^months
+              </p>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>

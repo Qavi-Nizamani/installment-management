@@ -116,9 +116,13 @@ export async function getInstallmentPlanStats(): Promise<ServiceResponse<Install
       totalRevenue += planRevenue;
       totalOutstanding += (plan.total_price - planRevenue);
 
-      // Calculate monthly payment for averaging
+      // Calculate monthly payment for averaging using compound interest formula
       if (plan.total_months > 0) {
-        totalMonthlyPayments += (plan.finance_amount / plan.total_months);
+        const futureValue = plan.monthly_percentage === 0 
+          ? plan.finance_amount 
+          : plan.finance_amount * Math.pow(1 + plan.monthly_percentage / 100, plan.total_months);
+        const monthlyAmount = futureValue / plan.total_months;
+        totalMonthlyPayments += monthlyAmount;
       }
 
       // Determine plan status
