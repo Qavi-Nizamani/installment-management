@@ -2,6 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Plus, 
   MoreHorizontal, 
@@ -10,7 +27,9 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Loader2
+  Edit,
+  Eye,
+  Trash2
 } from "lucide-react";
 import { Customer } from "@/services/customers/customers.service";
 
@@ -22,7 +41,7 @@ interface CustomerListProps {
 
 export default function CustomerList({ customers, isLoading, searchTerm }: CustomerListProps) {
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('');
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const mockCustomerData = () => ({
@@ -31,18 +50,56 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
     status: Math.random() > 0.2 ? "Active" : "Inactive"
   });
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Customer List</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading customers...</span>
-          </div>
-        ) : customers.length === 0 ? (
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Address</TableHead>
+                <TableHead>Join Date</TableHead>
+                <TableHead>Active Plans</TableHead>
+                <TableHead>Total Spent</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...Array(5)].map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell className="flex items-center space-x-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (customers.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer List</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="text-center py-8">
             <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
@@ -54,70 +111,137 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
               Add Customer
             </Button>
           </div>
-        ) : (
-          <div className="space-y-4">
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Customer List</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Customer</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Join Date</TableHead>
+              <TableHead>Active Plans</TableHead>
+              <TableHead>Total Spent</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {customers.map((customer) => {
               const mockData = mockCustomerData();
+              const customerInitials = getInitials(customer.name);
+              
               return (
-                <div
-                  key={customer.id}
-                  className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={`/avatars/${getInitials(customer.name).toLowerCase()}.png`} />
-                    <AvatarFallback>
-                      {getInitials(customer.name)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900">{customer.name}</h3>
-                      <Badge variant={mockData.status === "Active" ? "default" : "secondary"}>
-                        {mockData.status}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                      {customer.phone && (
-                        <div className="flex items-center">
-                          <Phone className="w-4 h-4 mr-2" />
-                          {customer.phone}
+                <TableRow key={customer.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={`/avatars/${customerInitials.toLowerCase()}.png`} />
+                        <AvatarFallback className="text-xs">
+                          {customerInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{customer.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Customer ID: {customer.id.slice(0, 8)}...
                         </div>
-                      )}
-                      {customer.address && (
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-2" />
+                      </div>
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    {customer.phone ? (
+                      <div className="flex items-center">
+                        <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium">{customer.phone}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">No phone</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {customer.address ? (
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium truncate max-w-[200px]" title={customer.address}>
                           {customer.address}
-                        </div>
-                      )}
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        Joined: {new Date(customer.created_at).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center">
-                        <CreditCard className="w-4 h-4 mr-2" />
-                        {mockData.activePlans} active plans
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="text-sm">
-                        <span className="text-gray-600">Total Spent: </span>
-                        <span className="font-semibold text-green-600">
-                          ${mockData.totalSpent.toLocaleString()}
                         </span>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground">No address</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span className="font-medium">
+                        {new Date(customer.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                  </div>
-                </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="flex items-center">
+                      <CreditCard className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span className="font-medium">{mockData.activePlans}</span>
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="font-medium text-green-600">
+                      ${mockData.totalSpent.toLocaleString()}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge variant={mockData.status === "Active" ? "default" : "secondary"}>
+                      {mockData.status}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Customer
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Customer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </div>
-        )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
