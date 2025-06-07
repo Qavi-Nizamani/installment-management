@@ -16,6 +16,12 @@ export interface Customer {
   updated_at: string;
 }
 
+// Extended customer with calculated fields
+export interface CustomerWithStats extends Customer {
+  active_plans: number;
+  status: 'Active' | 'Inactive';
+}
+
 export interface CreateCustomerPayload {
   name: string;
   phone?: string;
@@ -76,6 +82,88 @@ export async function getCustomers(): Promise<ServiceResponse<Customer[]>> {
     };
   } catch (error) {
     console.error('Error in getCustomers:', error);
+    return {
+      success: false,
+      error: 'An unexpected error occurred. Please try again.',
+    };
+  }
+}
+
+/**
+ * Get all customers with calculated stats (active plans, total spent)
+ */
+export async function getCustomersWithStats(): Promise<ServiceResponse<CustomerWithStats[]>> {
+  try {
+    // Use tenant guard to get secure context
+    const context = await requireTenantAccess();
+    
+    const cookieStore = cookies();
+    const supabase = await createClient(cookieStore);
+
+    // Get customers with their installment plans data
+    const query = supabase
+      .from('customers')
+      .select(`
+        *,
+        installment_plans (
+          id,
+          total_price,
+          upfront_paid,
+          finance_amount,
+          monthly_percentage,
+          total_months,
+          start_date,
+          business_model,
+          created_at
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    // Apply tenant filter for security
+    const { data, error } = await withTenantFilter(query, context.tenantId);
+
+    if (error) {
+      console.error('Error fetching customers with stats:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch customers. Please try again.',
+      };
+    }
+
+    // Calculate stats for each customer
+    const customersWithStats: CustomerWithStats[] = (data || []).map((customer: any) => {
+      const plans = customer.installment_plans || [];
+      
+      // Calculate active plans (plans that haven't been completed)
+      // A plan is considered active if it's within the payment period
+      const now = new Date();
+      const activePlans = plans.filter((plan: any) => {
+        const startDate = new Date(plan.start_date);
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + plan.total_months);
+        return now <= endDate;
+      }).length;
+      
+      // Determine status (active if has active plans, inactive otherwise)
+      const status: 'Active' | 'Inactive' = activePlans > 0 ? 'Active' : 'Inactive';
+
+      // Remove the nested installment_plans to avoid confusion
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { installment_plans, ...customerData } = customer;
+
+      return {
+        ...customerData,
+        active_plans: activePlans,
+        status
+      };
+    });
+
+    return {
+      success: true,
+      data: customersWithStats,
+    };
+  } catch (error) {
+    console.error('Error in getCustomersWithStats:', error);
     return {
       success: false,
       error: 'An unexpected error occurred. Please try again.',

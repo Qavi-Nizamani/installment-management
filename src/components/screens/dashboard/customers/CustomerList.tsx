@@ -31,10 +31,10 @@ import {
   Eye,
   Trash2
 } from "lucide-react";
-import { Customer } from "@/services/customers/customers.service";
+import { CustomerWithStats } from "@/services/customers/customers.service";
 
 interface CustomerListProps {
-  customers: Customer[];
+  customers: CustomerWithStats[];
   isLoading: boolean;
   searchTerm: string;
 }
@@ -43,12 +43,6 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
-
-  const mockCustomerData = () => ({
-    activePlans: Math.floor(Math.random() * 4),
-    totalSpent: Math.floor(Math.random() * 10000) + 1000,
-    status: Math.random() > 0.2 ? "Active" : "Inactive"
-  });
 
   if (isLoading) {
     return (
@@ -65,7 +59,6 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
                 <TableHead>Address</TableHead>
                 <TableHead>Join Date</TableHead>
                 <TableHead>Active Plans</TableHead>
-                <TableHead>Total Spent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -81,7 +74,6 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
                   <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                   <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                 </TableRow>
@@ -130,14 +122,12 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
               <TableHead>Address</TableHead>
               <TableHead>Join Date</TableHead>
               <TableHead>Active Plans</TableHead>
-              <TableHead>Total Spent</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {customers.map((customer) => {
-              const mockData = mockCustomerData();
               const customerInitials = getInitials(customer.name);
               
               return (
@@ -195,19 +185,13 @@ export default function CustomerList({ customers, isLoading, searchTerm }: Custo
                   <TableCell>
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-2 text-muted-foreground" />
-                      <span className="font-medium">{mockData.activePlans}</span>
+                      <span className="font-medium">{customer.active_plans}</span>
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <div className="font-medium text-green-600">
-                      ${mockData.totalSpent.toLocaleString()}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge variant={mockData.status === "Active" ? "default" : "secondary"}>
-                      {mockData.status}
+                    <Badge variant={customer.status === "Active" ? "default" : "secondary"}>
+                      {customer.status}
                     </Badge>
                   </TableCell>
 

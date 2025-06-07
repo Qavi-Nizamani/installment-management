@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { 
   Customer, 
+  CustomerWithStats,
   CustomerStats, 
   CreateCustomerPayload, 
   UpdateCustomerPayload,
-  getCustomers,
+  getCustomersWithStats,
   getCustomerById,
   createCustomer,
   updateCustomer,
@@ -15,7 +16,7 @@ import {
 
 interface CustomersState {
   // Data
-  customers: Customer[];
+  customers: CustomerWithStats[];
   stats: CustomerStats | null;
   selectedCustomer: Customer | null;
   
@@ -61,56 +62,22 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
   ...initialState,
 
   /**
-   * Fetches all customers from the database
+   * Fetches all customers from the database with stats
    */
   fetchCustomers: async () => {
     set({ isLoading: true, error: null });
     
     try {
-      const response = await getCustomers();
+      const response = await getCustomersWithStats();
       
       console.log("response", response);
       if (response.success) {
         set({ customers: response.data || [], isLoading: false });
       } else {
-        // Provide mock customers for development
-        const mockCustomers: Customer[] = [
-          {
-            id: "1",
-            tenant_id: "mock-tenant",
-            name: "Alice Johnson",
-            phone: "+1 (555) 123-4567",
-            address: "123 Main St, New York, NY",
-            national_id: "123-45-6789",
-            created_at: "2023-12-15T00:00:00Z",
-            updated_at: "2023-12-15T00:00:00Z",
-          },
-          {
-            id: "2",
-            tenant_id: "mock-tenant",
-            name: "Bob Smith",
-            phone: "+1 (555) 987-6543",
-            address: "456 Oak Ave, Los Angeles, CA",
-            national_id: "987-65-4321",
-            created_at: "2024-01-02T00:00:00Z",
-            updated_at: "2024-01-02T00:00:00Z",
-          },
-          {
-            id: "3",
-            tenant_id: "mock-tenant",
-            name: "Carol Davis",
-            phone: "+1 (555) 456-7890",
-            address: "789 Pine St, Chicago, IL",
-            national_id: "456-78-9012",
-            created_at: "2023-11-20T00:00:00Z",
-            updated_at: "2023-11-20T00:00:00Z",
-          },
-        ];
-        
         set({ 
-          customers: mockCustomers, 
+          customers: [], 
           isLoading: false,
-          error: 'Using mock data - configure Supabase for real data'
+          error: response.error || 'Failed to fetch customers'
         });
       }
     } catch {
@@ -182,12 +149,9 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
       const response = await createCustomer(payload);
       
       if (response.success) {
-        // Add the new customer to the list
-        const { customers } = get();
-        set({ 
-          customers: [response.data!, ...customers],
-          isCreating: false 
-        });
+        // Refresh the customer list to get updated stats
+        await get().fetchCustomers();
+        set({ isCreating: false });
         return true;
       } else {
         set({ error: response.error || 'Failed to create customer', isCreating: false });
@@ -209,14 +173,9 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
       const response = await updateCustomer(id, payload);
       
       if (response.success) {
-        // Update the customer in the list
-        const { customers } = get();
-        const updatedCustomers = customers.map(customer => 
-          customer.id === id ? response.data! : customer
-        );
-        
+        // Refresh the customer list to get updated stats
+        await get().fetchCustomers();
         set({ 
-          customers: updatedCustomers,
           selectedCustomer: response.data!,
           isUpdating: false 
         });
@@ -275,7 +234,9 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
         const response = await searchCustomers(term);
         
         if (response.success) {
-          set({ customers: response.data || [], isSearching: false });
+          // For now, refresh all customers - we'd need a searchCustomersWithStats function for proper search
+          await get().fetchCustomers();
+          set({ isSearching: false });
         } else {
           // Fallback to local filtering of existing customers
           const { customers } = get();
