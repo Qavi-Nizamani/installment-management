@@ -7,7 +7,8 @@ import { Plus, Search } from "lucide-react";
 import { InstallmentPlansStats } from "./InstallmentPlansStats";
 import { InstallmentPlansList } from "./InstallmentPlansList";
 import { CreatePlanModal } from "./CreatePlanModal";
-import { getInstallmentPlans, searchInstallmentPlans, type InstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
+import { getInstallmentPlans, searchInstallmentPlans } from "@/services/installment-plans/installmentPlans.service";
+import type { InstallmentPlan } from "@/types/installment-plans";
 
 export function InstallmentPlansScreen() {
   const [plans, setPlans] = useState<InstallmentPlan[]>([]);

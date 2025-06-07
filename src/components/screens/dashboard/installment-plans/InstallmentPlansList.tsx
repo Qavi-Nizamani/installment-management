@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from "lucide-react";
-import { type InstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
+import type { InstallmentPlan } from "@/types/installment-plans";
 
 interface InstallmentPlansListProps {
   plans: InstallmentPlan[];

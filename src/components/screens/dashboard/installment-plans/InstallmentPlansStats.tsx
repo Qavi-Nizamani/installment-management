@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard, Clock, DollarSign, TrendingUp, FileText } from "lucide-react";
-import { type InstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
+import type { InstallmentPlan } from "@/types/installment-plans";
 
 interface InstallmentPlansStatsProps {
   plans: InstallmentPlan[];

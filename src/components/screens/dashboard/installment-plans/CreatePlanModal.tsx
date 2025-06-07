@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { createInstallmentPlan, type CreateInstallmentPlanPayload } from "@/services/installment-plans/installmentPlans.service";
+import { createInstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
+import type { CreateInstallmentPlanPayload } from "@/types/installment-plans";
 import { getCustomers, type Customer } from "@/services/customers/customers.service";
 
 interface CreatePlanModalProps {

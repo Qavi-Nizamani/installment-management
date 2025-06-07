@@ -3,90 +3,13 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
-
-// Database record type for installment plans
-interface InstallmentPlanRecord {
-  id: string;
-  tenant_id: string;
-  customer_id: string;
-  title: string;
-  total_price: number;
-  upfront_paid: number;
-  finance_amount: number;
-  monthly_percentage: number;
-  total_months: number;
-  start_date: string;
-  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Export types for installment plans
-export interface InstallmentPlan extends InstallmentPlanRecord {
-  id: string;
-  tenant_id: string;
-  customer_id: string;
-  title: string;
-  total_price: number;
-  upfront_paid: number;
-  finance_amount: number;
-  monthly_percentage: number;
-  total_months: number;
-  start_date: string;
-  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  // Joined customer data
-  customer?: {
-    id: string;
-    name: string;
-    phone?: string;
-  };
-  // Computed fields
-  monthly_amount?: number;
-  status?: 'ACTIVE' | 'COMPLETED' | 'OVERDUE';
-  months_paid?: number;
-  next_due_date?: string;
-  total_paid?: number;
-  remaining_amount?: number;
-  // Revenue fields based on business model
-  my_revenue?: number; // Revenue for the current user based on business model
-  total_interest?: number; // Total interest that will be earned
-}
-
-export interface CreateInstallmentPlanPayload {
-  customer_id: string;
-  title: string;
-  total_price: number;
-  upfront_paid: number;
-  finance_amount: number;
-  monthly_percentage: number;
-  total_months: number;
-  start_date: string;
-  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
-  notes?: string;
-}
-
-export interface UpdateInstallmentPlanPayload {
-  customer_id?: string;
-  title?: string;
-  total_price?: number;
-  upfront_paid?: number;
-  finance_amount?: number;
-  monthly_percentage?: number;
-  total_months?: number;
-  start_date?: string;
-  business_model?: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
-  notes?: string;
-}
-
-export interface ServiceResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+import type {
+  ServiceResponse,
+  InstallmentPlan,
+  InstallmentPlanRecord,
+  CreateInstallmentPlanPayload,
+  UpdateInstallmentPlanPayload
+} from "./installmentPlans.types";
 
 /**
  * Get all installment plans with customer data and calculated fields
