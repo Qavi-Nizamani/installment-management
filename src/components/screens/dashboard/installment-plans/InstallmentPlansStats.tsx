@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Clock, DollarSign, TrendingUp } from "lucide-react";
+import { CreditCard, Clock, DollarSign, TrendingUp, FileText } from "lucide-react";
 import { type InstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
 
 interface InstallmentPlansStatsProps {
@@ -12,8 +12,14 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
   const activePlans = plans.filter(p => p.status === 'ACTIVE').length;
   const completedPlans = plans.filter(p => p.status === 'COMPLETED').length;
   
+  // Separate stats by business model
+  const productOwnerPlans = plans.filter(p => p.business_model === 'PRODUCT_OWNER');
+  const financerOnlyPlans = plans.filter(p => p.business_model === 'FINANCER_ONLY');
+  
+  // Calculate revenue based on business model
+  const totalMyRevenue = plans.reduce((sum, p) => sum + (p.my_revenue || 0), 0);
+  const totalInterestRevenue = plans.reduce((sum, p) => sum + (p.total_interest || 0), 0);
   const totalFinanceAmount = plans.reduce((sum, p) => sum + p.finance_amount, 0);
-  const totalRevenue = plans.reduce((sum, p) => sum + (p.total_paid || 0), 0);
 
   // Calculate new plans this month
   const currentDate = new Date();
@@ -26,11 +32,11 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
   }).length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Plans</CardTitle>
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <FileText className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalPlans}</div>
@@ -39,7 +45,7 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
           </p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Plans</CardTitle>
@@ -59,23 +65,28 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            ${totalFinanceAmount.toLocaleString()}
-          </div>
-          <p className="text-xs text-muted-foreground">Across all plans</p>
+          <div className="text-2xl font-bold">${totalFinanceAmount.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            Across all plans
+          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Revenue Generated</CardTitle>
+          <CardTitle className="text-sm font-medium">My Revenue</CardTitle>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            ${totalRevenue.toLocaleString()}
-          </div>
-          <p className="text-xs text-muted-foreground">From payments received</p>
+          <div className="text-2xl font-bold">${totalMyRevenue.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            {productOwnerPlans.length > 0 && financerOnlyPlans.length > 0 
+              ? `${productOwnerPlans.length} owned, ${financerOnlyPlans.length} financed`
+              : productOwnerPlans.length > 0 
+                ? 'Product sales + interest'
+                : 'Interest only'
+            }
+          </p>
         </CardContent>
       </Card>
     </div>

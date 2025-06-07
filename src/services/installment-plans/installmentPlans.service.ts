@@ -16,6 +16,7 @@ interface InstallmentPlanRecord {
   monthly_percentage: number;
   total_months: number;
   start_date: string;
+  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -33,6 +34,7 @@ export interface InstallmentPlan extends InstallmentPlanRecord {
   monthly_percentage: number;
   total_months: number;
   start_date: string;
+  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -49,6 +51,9 @@ export interface InstallmentPlan extends InstallmentPlanRecord {
   next_due_date?: string;
   total_paid?: number;
   remaining_amount?: number;
+  // Revenue fields based on business model
+  my_revenue?: number; // Revenue for the current user based on business model
+  total_interest?: number; // Total interest that will be earned
 }
 
 export interface CreateInstallmentPlanPayload {
@@ -60,6 +65,7 @@ export interface CreateInstallmentPlanPayload {
   monthly_percentage: number;
   total_months: number;
   start_date: string;
+  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
   notes?: string;
 }
 
@@ -72,6 +78,7 @@ export interface UpdateInstallmentPlanPayload {
   monthly_percentage?: number;
   total_months?: number;
   start_date?: string;
+  business_model?: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
   notes?: string;
 }
 
@@ -222,6 +229,7 @@ export async function createInstallmentPlan(
         monthly_percentage: payload.monthly_percentage,
         total_months: payload.total_months,
         start_date: payload.start_date,
+        business_model: payload.business_model,
         notes: payload.notes,
       })
       .select()
@@ -430,7 +438,7 @@ function calculateMonthlyInstallment(financeAmount: number, monthlyPercentage: n
 /**
  * Calculate metrics for a plan (monthly amount, status, payments, etc.)
  */
-async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 'finance_amount' | 'total_months' | 'upfront_paid' | 'total_price' | 'monthly_percentage'>) {
+async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 'finance_amount' | 'total_months' | 'upfront_paid' | 'total_price' | 'monthly_percentage' | 'business_model'>) {
   try {
     const cookieStore = cookies();
     const supabase = await createClient(cookieStore);
@@ -452,6 +460,19 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
     // Calculate remaining amount using the compound interest formula
     const totalAmountDue = plan.upfront_paid + calculateFutureValue(plan.finance_amount, plan.monthly_percentage, plan.total_months);
     const remainingAmount = totalAmountDue - totalPaid;
+
+    // Calculate revenue based on business model
+    const totalInterest = calculateFutureValue(plan.finance_amount, plan.monthly_percentage, plan.total_months) - plan.finance_amount;
+    let myRevenue = 0;
+    
+    if (plan.business_model === 'PRODUCT_OWNER') {
+      // Product owner gets: upfront payment + all installment payments (product price + interest)
+      myRevenue = totalPaid;
+    } else {
+      // Financer only gets: interest portion of paid installments
+      const interestPerInstallment = totalInterest / plan.total_months;
+      myRevenue = monthsPaid * interestPerInstallment;
+    }
 
     // Determine status
     let status: 'ACTIVE' | 'COMPLETED' | 'OVERDUE' = 'ACTIVE';
@@ -480,6 +501,8 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
       next_due_date: nextDueDate,
       total_paid: totalPaid,
       remaining_amount: remainingAmount,
+      my_revenue: myRevenue,
+      total_interest: totalInterest,
     };
   } catch (error) {
     console.error('Error calculating plan metrics:', error);
@@ -487,8 +510,11 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
       monthly_amount: 0,
       status: 'ACTIVE' as const,
       months_paid: 0,
-      total_paid: 0,
-      remaining_amount: 0,
+      next_due_date: undefined,
+      total_paid: plan.upfront_paid,
+      remaining_amount: plan.total_price - plan.upfront_paid,
+      my_revenue: plan.business_model === 'PRODUCT_OWNER' ? plan.upfront_paid : 0,
+      total_interest: 0,
     };
   }
 }

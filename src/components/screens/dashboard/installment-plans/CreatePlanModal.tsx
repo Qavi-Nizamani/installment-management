@@ -21,10 +21,23 @@ interface CreatePlanModalProps {
   onPlanCreated: () => void;
 }
 
+interface FormData {
+  customer_id: string;
+  title: string;
+  total_price: string;
+  upfront_paid: string;
+  finance_amount: string;
+  monthly_percentage: string;
+  total_months: string;
+  start_date: string;
+  business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
+  notes: string;
+}
+
 export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanModalProps) {
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     customer_id: "",
     title: "",
     total_price: "",
@@ -33,6 +46,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     monthly_percentage: "",
     total_months: "",
     start_date: "",
+    business_model: 'PRODUCT_OWNER',
     notes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -137,6 +151,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
         monthly_percentage: parseFloat(formData.monthly_percentage),
         total_months: parseInt(formData.total_months),
         start_date: formData.start_date,
+        business_model: formData.business_model,
         notes: formData.notes.trim() || undefined,
       };
 
@@ -155,6 +170,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
           monthly_percentage: "",
           total_months: "",
           start_date: "",
+          business_model: 'PRODUCT_OWNER',
           notes: "",
         });
         setErrors({});
@@ -178,20 +194,54 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Installment Plan</DialogTitle>
           <DialogDescription>
-            Set up a new installment plan for a customer. All fields marked with * are required.
+            Set up a new installment plan for a customer with payment schedule and terms.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
               {errors.general}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="business_model">Business Model *</Label>
+            <Select
+              value={formData.business_model}
+              onValueChange={(value: 'PRODUCT_OWNER' | 'FINANCER_ONLY') => 
+                setFormData(prev => ({ ...prev, business_model: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select business model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PRODUCT_OWNER">
+                  <div className="flex flex-col">
+                    <span className="font-medium">Product Owner</span>
+                    <span className="text-xs text-muted-foreground">I sell the product and provide financing</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="FINANCER_ONLY">
+                  <div className="flex flex-col">
+                    <span className="font-medium">Financer Only</span>
+                    <span className="text-xs text-muted-foreground">I only provide financing for someone else's product</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              {formData.business_model === 'PRODUCT_OWNER' 
+                ? "Your revenue = upfront payment + all installment payments (full product price + interest)"
+                : "Your revenue = interest portion only (monthly percentage on financed amount)"
+              }
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -321,7 +371,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
           {parseFloat(formData.finance_amount) > 0 && parseInt(formData.total_months) > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
               <h4 className="font-medium text-blue-900">Payment Preview</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-blue-700">Monthly Installment:</span>
                   <p className="font-bold text-blue-900">
@@ -335,9 +385,20 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                   </p>
                 </div>
                 <div>
-                  <span className="text-blue-700">Total Amount:</span>
+                  <span className="text-blue-700">Customer Pays Total:</span>
                   <p className="font-bold text-blue-900">
                     ${previewAmounts.totalAmount.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-blue-700">
+                    {formData.business_model === 'PRODUCT_OWNER' ? 'Your Total Revenue:' : 'Your Interest Revenue:'}
+                  </span>
+                  <p className="font-bold text-green-900">
+                    ${formData.business_model === 'PRODUCT_OWNER' 
+                      ? previewAmounts.totalAmount.toFixed(2)
+                      : (previewAmounts.futureValue - parseFloat(formData.finance_amount || "0")).toFixed(2)
+                    }
                   </p>
                 </div>
               </div>

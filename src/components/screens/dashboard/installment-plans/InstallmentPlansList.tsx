@@ -80,11 +80,11 @@ export function InstallmentPlansList({
               <TableRow>
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Business Model</TableHead>
                 <TableHead>Total Price</TableHead>
                 <TableHead>Monthly Amount</TableHead>
                 <TableHead>Progress</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Remaining</TableHead>
+                <TableHead>My Revenue</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -145,11 +145,11 @@ export function InstallmentPlansList({
             <TableRow>
               <TableHead>Customer</TableHead>
               <TableHead>Plan</TableHead>
+              <TableHead>Business Model</TableHead>
               <TableHead>Total Price</TableHead>
               <TableHead>Monthly Amount</TableHead>
               <TableHead>Progress</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Remaining</TableHead>
+              <TableHead>My Revenue</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -187,6 +187,18 @@ export function InstallmentPlansList({
                       {plan.monthly_percentage}% interest
                     </div>
                   </TableCell>
+
+                  <TableCell>
+                    <div className="font-medium">
+                      {plan.business_model === 'PRODUCT_OWNER' ? 'Product Owner' : 'Financer Only'}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {plan.business_model === 'PRODUCT_OWNER' 
+                        ? 'Full revenue' 
+                        : 'Interest only'
+                      }
+                    </div>
+                  </TableCell>
                   
                   <TableCell>
                     <div className="font-medium">
@@ -218,30 +230,18 @@ export function InstallmentPlansList({
                   </TableCell>
                   
                   <TableCell>
-                    <div className="font-medium">
-                      {new Date(plan.start_date).toLocaleDateString()}
+                    <div className="font-medium text-green-600">
+                      ${(plan.my_revenue || 0).toFixed(2)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {plan.next_due_date 
-                        ? `Next: ${new Date(plan.next_due_date).toLocaleDateString()}`
-                        : 'No payments due'
-                      }
+                      {plan.business_model === 'PRODUCT_OWNER' ? 'total earned' : 'interest earned'}
                     </div>
                   </TableCell>
                   
                   <TableCell>
-                    <div className="font-medium text-orange-600">
-                      ${remainingAmount.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      remaining
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <Badge variant="secondary" className={statusConfig.color}>
-                      <StatusIcon className={`w-3 h-3 mr-1 ${statusConfig.iconColor}`} />
-                      {plan.status || 'ACTIVE'}
+                    <Badge variant={statusConfig.variant} className="flex items-center space-x-1">
+                      <StatusIcon className="w-3 h-3" />
+                      <span>{plan.status}</span>
                     </Badge>
                   </TableCell>
                   
