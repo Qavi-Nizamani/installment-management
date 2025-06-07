@@ -32,6 +32,7 @@ interface FormData {
   total_months: string;
   start_date: string;
   business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
+  interest_type: 'SIMPLE' | 'COMPOUND';
   notes: string;
 }
 
@@ -48,6 +49,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     total_months: "",
     start_date: "",
     business_model: 'PRODUCT_OWNER',
+    interest_type: 'SIMPLE',
     notes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -71,7 +73,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     }));
   }, [formData.total_price, formData.upfront_paid]);
 
-  // Calculate preview amounts using compound interest formula
+  // Calculate preview amounts using simple or compound interest formula
   const getPreviewAmounts = () => {
     const financeAmount = parseFloat(formData.finance_amount) || 0;
     const monthlyPercentage = parseFloat(formData.monthly_percentage) || 0;
@@ -81,12 +83,20 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
       return { monthlyInstallment: 0, futureValue: 0, totalAmount: 0 };
     }
     
-    // Future Value (FV) = finance_amount * (1 + monthly_percentage/100) ^ total_months
-    const futureValue = monthlyPercentage === 0 
-      ? financeAmount 
-      : financeAmount * Math.pow(1 + monthlyPercentage / 100, totalMonths);
+    let futureValue: number;
     
-    // Monthly Installment = FV / total_months
+    if (formData.interest_type === 'SIMPLE') {
+      // Simple Interest: Total Interest = Principal × Rate × Time
+      const totalInterest = financeAmount * (monthlyPercentage / 100) * totalMonths;
+      futureValue = financeAmount + totalInterest;
+    } else {
+      // Compound Interest: FV = Principal × (1 + rate)^periods
+      futureValue = monthlyPercentage === 0 
+        ? financeAmount 
+        : financeAmount * Math.pow(1 + monthlyPercentage / 100, totalMonths);
+    }
+    
+    // Monthly Installment = Total Amount / Total Months
     const monthlyInstallment = futureValue / totalMonths;
     
     // Total amount = upfront + future value
@@ -172,6 +182,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
           total_months: "",
           start_date: "",
           business_model: 'PRODUCT_OWNER',
+          interest_type: 'SIMPLE',
           notes: "",
         });
         setErrors({});
@@ -333,6 +344,40 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="interest_type">Interest Type *</Label>
+              <Select
+                value={formData.interest_type}
+                onValueChange={(value: 'SIMPLE' | 'COMPOUND') => 
+                  setFormData(prev => ({ ...prev, interest_type: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select interest type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SIMPLE">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Simple Interest</span>
+                      <span className="text-xs text-muted-foreground">Interest = Principal × Rate × Time</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="COMPOUND">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Compound Interest</span>
+                      <span className="text-xs text-muted-foreground">Interest compounds monthly</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                {formData.interest_type === 'SIMPLE' 
+                  ? "Simple: 4.5% × 4 months = 18% total interest"
+                  : "Compound: 4.5% each month compounds on remaining balance"
+                }
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="total_months">Total Months *</Label>
               <Input
                 id="total_months"
@@ -404,7 +449,11 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 </div>
               </div>
               <p className="text-xs text-blue-600">
-                *Calculated using compound interest: FV = finance_amount × (1 + rate)^months
+                *Calculated using {formData.interest_type.toLowerCase()} interest: {
+                  formData.interest_type === 'SIMPLE' 
+                    ? `Interest = ${formData.finance_amount} × ${formData.monthly_percentage}% × ${formData.total_months}`
+                    : `FV = ${formData.finance_amount} × (1 + ${formData.monthly_percentage}%)^${formData.total_months}`
+                }
               </p>
             </div>
           )}
