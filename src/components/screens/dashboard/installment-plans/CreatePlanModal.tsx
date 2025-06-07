@@ -1,3 +1,6 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -5,16 +8,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect } from "react";
-import { createInstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
-import type { CreateInstallmentPlanPayload } from "@/types/installment-plans";
-import { getCustomers, type Customer } from "@/services/customers/customers.service";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { createInstallmentPlan } from '@/services/installment-plans/installmentPlans.service';
+import { getCustomers, type Customer } from '@/services/customers/customers.service';
+import type { CreateInstallmentPlanPayload } from '@/types/installment-plans';
 
 interface CreatePlanModalProps {
   isOpen: boolean;
@@ -32,13 +41,10 @@ interface FormData {
   total_months: string;
   start_date: string;
   business_model: 'PRODUCT_OWNER' | 'FINANCER_ONLY';
-  interest_type: 'SIMPLE' | 'COMPOUND';
   notes: string;
 }
 
 export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [formData, setFormData] = useState<FormData>({
     customer_id: "",
     title: "",
@@ -49,9 +55,11 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     total_months: "",
     start_date: "",
     business_model: 'PRODUCT_OWNER',
-    interest_type: 'SIMPLE',
     notes: "",
   });
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load customers when modal opens
@@ -73,7 +81,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     }));
   }, [formData.total_price, formData.upfront_paid]);
 
-  // Calculate preview amounts using simple or compound interest formula
+  // Calculate preview amounts using simple interest formula
   const getPreviewAmounts = () => {
     const financeAmount = parseFloat(formData.finance_amount) || 0;
     const monthlyPercentage = parseFloat(formData.monthly_percentage) || 0;
@@ -83,18 +91,9 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
       return { monthlyInstallment: 0, futureValue: 0, totalAmount: 0 };
     }
     
-    let futureValue: number;
-    
-    if (formData.interest_type === 'SIMPLE') {
-      // Simple Interest: Total Interest = Principal × Rate × Time
-      const totalInterest = financeAmount * (monthlyPercentage / 100) * totalMonths;
-      futureValue = financeAmount + totalInterest;
-    } else {
-      // Compound Interest: FV = Principal × (1 + rate)^periods
-      futureValue = monthlyPercentage === 0 
-        ? financeAmount 
-        : financeAmount * Math.pow(1 + monthlyPercentage / 100, totalMonths);
-    }
+    // Simple Interest: Total Interest = Principal × Rate × Time
+    const totalInterest = financeAmount * (monthlyPercentage / 100) * totalMonths;
+    const futureValue = financeAmount + totalInterest;
     
     // Monthly Installment = Total Amount / Total Months
     const monthlyInstallment = futureValue / totalMonths;
@@ -182,7 +181,6 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
           total_months: "",
           start_date: "",
           business_model: 'PRODUCT_OWNER',
-          interest_type: 'SIMPLE',
           notes: "",
         });
         setErrors({});
@@ -242,7 +240,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 <SelectItem value="FINANCER_ONLY">
                   <div className="flex flex-col">
                     <span className="font-medium">Financer Only</span>
-                    <span className="text-xs text-muted-foreground">I only provide financing for someone else's product</span>
+                    <span className="text-xs text-muted-foreground">I only provide financing for someone else&apos;s product</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -344,40 +342,6 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="interest_type">Interest Type *</Label>
-              <Select
-                value={formData.interest_type}
-                onValueChange={(value: 'SIMPLE' | 'COMPOUND') => 
-                  setFormData(prev => ({ ...prev, interest_type: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select interest type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SIMPLE">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Simple Interest</span>
-                      <span className="text-xs text-muted-foreground">Interest = Principal × Rate × Time</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="COMPOUND">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Compound Interest</span>
-                      <span className="text-xs text-muted-foreground">Interest compounds monthly</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500">
-                {formData.interest_type === 'SIMPLE' 
-                  ? "Simple: 4.5% × 4 months = 18% total interest"
-                  : "Compound: 4.5% each month compounds on remaining balance"
-                }
-              </p>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="total_months">Total Months *</Label>
               <Input
                 id="total_months"
@@ -449,11 +413,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 </div>
               </div>
               <p className="text-xs text-blue-600">
-                *Calculated using {formData.interest_type.toLowerCase()} interest: {
-                  formData.interest_type === 'SIMPLE' 
-                    ? `Interest = ${formData.finance_amount} × ${formData.monthly_percentage}% × ${formData.total_months}`
-                    : `FV = ${formData.finance_amount} × (1 + ${formData.monthly_percentage}%)^${formData.total_months}`
-                }
+                *Calculated using simple interest: Interest = {formData.finance_amount} × {formData.monthly_percentage}% × {formData.total_months}
               </p>
             </div>
           )}
