@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, Loader2 } from "lucide-react";
-import { Customer, CustomerStats } from "@/services/customers.service";
+import { Customer, CustomerStats } from "@/services/customers/customers.service";
 
 interface CustomerStatsCardsProps {
   customers: Customer[];

@@ -17,7 +17,7 @@ The service handles all database operations with Supabase:
 
 ### Example Usage:
 ```typescript
-import { getCustomers, createCustomer } from '@/services/customers.service';
+import { getCustomers, createCustomer } from '@/services/customers/customers.service';
 
 // Fetch customers
 const result = await getCustomers();

@@ -12,7 +12,7 @@ import {
   Calendar,
   Loader2
 } from "lucide-react";
-import { Customer } from "@/services/customers.service";
+import { Customer } from "@/services/customers/customers.service";
 
 interface CustomerListProps {
   customers: Customer[];
