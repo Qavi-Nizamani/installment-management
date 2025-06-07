@@ -153,6 +153,7 @@ export function InstallmentPlansList({
                 <TableHead>Plan</TableHead>
                 <TableHead>Business Model</TableHead>
                 <TableHead>Total Price</TableHead>
+                <TableHead>Total Profit</TableHead>
                 <TableHead>Monthly Amount</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>My Revenue</TableHead>
@@ -168,6 +169,7 @@ export function InstallmentPlansList({
                     <Skeleton className="h-4 w-24" />
                   </TableCell>
                   <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
@@ -219,6 +221,7 @@ export function InstallmentPlansList({
                 <TableHead>Plan</TableHead>
                 <TableHead>Business Model</TableHead>
                 <TableHead>Total Price</TableHead>
+                <TableHead>Total Profit</TableHead>
                 <TableHead>Monthly Amount</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>My Revenue</TableHead>
@@ -277,6 +280,15 @@ export function InstallmentPlansList({
                       </div>
                       <div className="text-sm text-muted-foreground">
                         ${plan.upfront_paid.toLocaleString()} upfront
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="font-medium text-blue-600">
+                        ${(plan.total_interest || 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Trade profit
                       </div>
                     </TableCell>
                     
