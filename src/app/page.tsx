@@ -9,6 +9,20 @@ export default function Home() {
           </div>
           <span className="text-xl font-bold text-gray-900">InstallmentManager</span>
         </div>
+        <div className="flex items-center space-x-4">
+          <a
+            href="/auth/login"
+            className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
+          >
+            Login
+          </a>
+          <a
+            href="/auth/signup"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-sm"
+          >
+            Sign Up
+          </a>
+        </div>
       </nav>
 
       {/* Hero Section */}

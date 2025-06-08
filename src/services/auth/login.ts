@@ -35,5 +35,5 @@ export async function login(data: LoginPayload): Promise<LoginResponse> {
 }
 
 export async function redirectAfterLogin() {
-  redirect("/");
+  redirect("/dashboard");
 } 
