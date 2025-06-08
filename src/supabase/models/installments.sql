@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS installments (
     penalty NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (penalty >= 0),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    CONSTRAINT valid_payment CHECK (amount_paid <= amount_due + penalty)
+    updated_at TIMESTAMPTZ DEFAULT now()
+    -- Note: No payment constraint - application handles payment validation and distribution
 );
 
 -- Create indexes for faster lookups
@@ -74,24 +74,5 @@ CREATE TRIGGER update_installments_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Create function to update status based on payment
-CREATE OR REPLACE FUNCTION update_installment_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.amount_paid >= NEW.amount_due + NEW.penalty THEN
-        NEW.status := 'PAID';
-        NEW.paid_on := COALESCE(NEW.paid_on, CURRENT_DATE);
-    ELSIF NEW.due_date < CURRENT_DATE AND NEW.amount_paid < NEW.amount_due + NEW.penalty THEN
-        NEW.status := 'OVERDUE';
-    ELSE
-        NEW.status := 'PENDING';
-    END IF;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Create trigger for status updates
-CREATE TRIGGER update_installment_status_trigger
-    BEFORE INSERT OR UPDATE ON installments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_installment_status(); 
+-- Note: Status updates are now handled at the application level 
+-- in the markAsPaid service function for better control and transparency 

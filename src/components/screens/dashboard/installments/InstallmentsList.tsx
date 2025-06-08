@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -101,33 +102,50 @@ export function InstallmentsList({
 }: InstallmentsListProps) {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
+  const [amountPaid, setAmountPaid] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleMarkAsPaid = (installment: Installment) => {
     setSelectedInstallment(installment);
+    setAmountPaid(installment.amount_due.toString());
     setPaymentDialogOpen(true);
   };
 
   const handleConfirmPayment = async () => {
     if (!selectedInstallment) return;
 
+    const parsedAmount = parseFloat(amountPaid);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      // Could add validation feedback here in the future
+      return;
+    }
+
     try {
       setIsUpdating(true);
+      const amountDue = selectedInstallment.amount_due;
+      let noteDetail = '';
+      if (parsedAmount < amountDue) {
+        noteDetail = ` (underpayment - $${(amountDue - parsedAmount).toLocaleString()} balance moved to next installment)`;
+      } else if (parsedAmount > amountDue) {
+        noteDetail = ` (overpayment - $${(parsedAmount - amountDue).toLocaleString()} excess applied to last installment)`;
+      }
+
       const response = await markAsPaid(selectedInstallment.id, {
-        amount_paid: selectedInstallment.amount_due,
-        paid_date: new Date().toISOString().split('T')[0],
-        notes: 'Marked as paid from installments page'
+        amount_paid: parsedAmount,
+        paid_on: new Date().toISOString().split('T')[0],
+        notes: `Payment of $${parsedAmount.toLocaleString()} recorded from installments page${noteDetail}`
       });
       
       if (response.success) {
         onInstallmentUpdated();
         setPaymentDialogOpen(false);
         setSelectedInstallment(null);
+        setAmountPaid('');
       } else {
-        console.error('Failed to mark as paid:', response.error);
+        console.error('Failed to record payment:', response.error);
       }
     } catch (error) {
-      console.error('Error marking as paid:', error);
+      console.error('Error recording payment:', error);
     } finally {
       setIsUpdating(false);
     }
@@ -340,7 +358,7 @@ export function InstallmentsList({
                               className="text-green-600"
                             >
                               <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Mark as Paid
+                              Record Payment
                             </DropdownMenuItem>
                           )}
                           
@@ -365,31 +383,76 @@ export function InstallmentsList({
       </Card>
 
       {/* Payment Confirmation Dialog */}
-      <AlertDialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+      <AlertDialog open={paymentDialogOpen} onOpenChange={(open) => {
+        setPaymentDialogOpen(open);
+        if (!open) {
+          setSelectedInstallment(null);
+          setAmountPaid('');
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mark Installment as Paid</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to mark this installment as paid?
-              <br />
-              <br />
-              <strong>Customer:</strong> {selectedInstallment?.customer?.name}
-              <br />
-              <strong>Plan:</strong> {selectedInstallment?.plan_title}
-              <br />
-              <strong>Amount:</strong> ${selectedInstallment?.amount_due.toLocaleString()}
-              <br />
-              <strong>Due Date:</strong> {selectedInstallment?.due_date && formatDate(selectedInstallment.due_date)}
+            <AlertDialogTitle>Record Payment</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <div>
+                  Record payment for this installment. The installment will be marked as PAID regardless of the amount.
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div><strong>Customer:</strong> {selectedInstallment?.customer?.name}</div>
+                  <div><strong>Plan:</strong> {selectedInstallment?.plan_title}</div>
+                  <div><strong>Amount Due:</strong> ${selectedInstallment?.amount_due.toLocaleString()}</div>
+                  <div><strong>Due Date:</strong> {selectedInstallment?.due_date && formatDate(selectedInstallment.due_date)}</div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="amount-paid" className="text-sm font-medium text-gray-700">
+                    Amount Paid ($)
+                  </label>
+                  <Input
+                    id="amount-paid"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                    placeholder="Enter amount paid"
+                    className="w-full"
+                    disabled={isUpdating}
+                  />
+                  {selectedInstallment && parseFloat(amountPaid) > 0 && (
+                    <div className="text-xs space-y-1">
+                      <p className="text-green-600">
+                        ✅ This installment will be marked as <strong>PAID</strong>
+                      </p>
+                      {parseFloat(amountPaid) > selectedInstallment.amount_due ? (
+                        <p className="text-blue-600">
+                          📈 <strong>Overpayment:</strong> ${(parseFloat(amountPaid) - selectedInstallment.amount_due).toLocaleString()} excess will reduce the last unpaid installment in this plan
+                        </p>
+                      ) : parseFloat(amountPaid) < selectedInstallment.amount_due ? (
+                        <p className="text-amber-600">
+                          📋 <strong>Underpayment:</strong> ${(selectedInstallment.amount_due - parseFloat(amountPaid)).toLocaleString()} balance will be moved to the next unpaid installment. This installment will show $0 remaining due.
+                        </p>
+                      ) : (
+                        <p className="text-green-600">
+                          💯 <strong>Full payment</strong> - exact amount due
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmPayment}
-              disabled={isUpdating}
+              disabled={isUpdating || !amountPaid || parseFloat(amountPaid) <= 0}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isUpdating ? "Processing..." : "Mark as Paid"}
+              {isUpdating ? "Processing..." : "Record Payment"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

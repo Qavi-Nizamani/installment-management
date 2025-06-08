@@ -47,6 +47,7 @@ export interface Installment extends InstallmentRecord {
 // ==================== PAYLOAD TYPES ====================
 
 export interface UpdateInstallmentPayload {
+  amount_due?: number;
   amount_paid?: number;
   status?: InstallmentStatus;
   paid_on?: string;

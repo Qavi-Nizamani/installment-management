@@ -197,21 +197,134 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
 }
 
 /**
- * Mark installment as paid with payment details
+ * Mark installment as paid with advanced payment handling
+ * - Any payment marks current installment as PAID
+ * - Underpayment: remaining balance moved to next installment
+ * - Overpayment: excess amount reduces last installment
+ * - Edge cases: handle when no next/last installments exist
  */
 export async function markAsPaid(installmentId: string, payload: MarkAsPaidPayload): Promise<ServiceResponse<InstallmentRecord>> {
   try {
-    const updatePayload: UpdateInstallmentPayload = {
-      amount_paid: payload.amount_paid,
+    const context = await requireTenantAccess();
+    const cookieStore = cookies();
+    const supabase = await createClient(cookieStore);
+
+    // Get the current installment
+    const { data: currentInstallment, error: fetchError } = await withTenantFilter(
+      supabase
+        .from('installments')
+        .select('*')
+        .eq('id', installmentId)
+        .single(),
+      context.tenantId
+    );
+
+    if (fetchError || !currentInstallment) {
+      console.error('Error fetching installment:', fetchError);
+      return { success: false, error: 'Failed to fetch installment details' };
+    }
+
+    const paymentAmount = payload.amount_paid;
+    const amountDue = currentInstallment.amount_due;
+    const planId = currentInstallment.installment_plan_id;
+
+    // Always mark current installment as PAID
+    const currentInstallmentUpdate: UpdateInstallmentPayload = {
+      amount_paid: paymentAmount,
       status: 'PAID' as InstallmentStatus,
       paid_on: payload.paid_on,
       notes: payload.notes
     };
 
-    return await updateInstallment(installmentId, updatePayload);
+    // Handle underpayment: move remaining balance to next installment
+    if (paymentAmount < amountDue) {
+      const remainingBalance = amountDue - paymentAmount;
+      
+      // Find next installment in the same plan
+      const { data: nextInstallments, error: nextError } = await withTenantFilter(
+        supabase
+          .from('installments')
+          .select('*')
+          .eq('installment_plan_id', planId)
+          .eq('status', 'PENDING')
+          .gt('due_date', currentInstallment.due_date)
+          .order('due_date', { ascending: true })
+          .limit(1),
+        context.tenantId
+      );
+
+      if (nextError) {
+        console.error('Error fetching next installment:', nextError);
+        // Don't fail the whole transaction, just log the issue
+      } else if (nextInstallments && nextInstallments.length > 0) {
+        // Move remaining balance to next installment
+        const nextInstallment = nextInstallments[0];
+        const nextInstallmentUpdate: UpdateInstallmentPayload = {
+          amount_due: nextInstallment.amount_due + remainingBalance,
+          notes: `${nextInstallment.notes || ''} [Balance of $${remainingBalance.toLocaleString()} carried forward from previous installment]`.trim()
+        };
+
+        await updateInstallment(nextInstallment.id, nextInstallmentUpdate);
+        
+        // Update current installment amount_due to match amount_paid (so remaining_due = 0)
+        currentInstallmentUpdate.amount_due = paymentAmount;
+      }
+      // If no next installment exists, keep original amount_due to show the shortfall
+    }
+
+    // Handle overpayment: reduce last installment
+    else if (paymentAmount > amountDue) {
+      const excessAmount = paymentAmount - amountDue;
+      
+      // Find last unpaid installment in the same plan
+      const { data: lastInstallments, error: lastError } = await withTenantFilter(
+        supabase
+          .from('installments')
+          .select('*')
+          .eq('installment_plan_id', planId)
+          .in('status', ['PENDING', 'OVERDUE'])
+          .order('due_date', { ascending: false })
+          .limit(1),
+        context.tenantId
+      );
+
+      if (lastError) {
+        console.error('Error fetching last installment:', lastError);
+        // Don't fail the whole transaction, just log the issue
+      } else if (lastInstallments && lastInstallments.length > 0) {
+        const lastInstallment = lastInstallments[0];
+        
+        // Reduce the last installment by excess amount (but not below 0)
+        const newAmountDue = Math.max(0, lastInstallment.amount_due - excessAmount);
+        const lastInstallmentUpdate: UpdateInstallmentPayload = {
+          amount_due: newAmountDue,
+          notes: `${lastInstallment.notes || ''} [Reduced by $${Math.min(excessAmount, lastInstallment.amount_due).toLocaleString()} overpayment from earlier installment]`.trim()
+        };
+
+        // If the last installment is now fully paid by the excess
+        if (newAmountDue === 0) {
+          lastInstallmentUpdate.status = 'PAID' as InstallmentStatus;
+          lastInstallmentUpdate.amount_paid = lastInstallment.amount_due;
+          lastInstallmentUpdate.paid_on = payload.paid_on;
+        }
+
+        await updateInstallment(lastInstallment.id, lastInstallmentUpdate);
+        
+        // Keep current installment's original amount_due (shows the overpayment clearly)
+      }
+      // If no last installment exists, keep original amount_due to show the overpayment
+    }
+
+    // Update current installment
+    const currentUpdateResult = await updateInstallment(installmentId, currentInstallmentUpdate);
+    if (!currentUpdateResult.success) {
+      return currentUpdateResult;
+    }
+
+    return currentUpdateResult;
   } catch (error) {
     console.error('Error in markAsPaid:', error);
-    return { success: false, error: 'Failed to mark installment as paid' };
+    return { success: false, error: 'Failed to process payment' };
   }
 }
 
