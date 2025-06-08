@@ -24,7 +24,7 @@ export interface InstallmentRecord {
   amount_due: number;
   amount_paid: number;
   status: InstallmentStatus;
-  paid_date?: string;
+  paid_on?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -49,13 +49,13 @@ export interface Installment extends InstallmentRecord {
 export interface UpdateInstallmentPayload {
   amount_paid?: number;
   status?: InstallmentStatus;
-  paid_date?: string;
+  paid_on?: string;
   notes?: string;
 }
 
 export interface MarkAsPaidPayload {
   amount_paid: number;
-  paid_date: string;
+  paid_on: string;
   notes?: string;
 }
 
@@ -131,6 +131,6 @@ export const INSTALLMENT_STATUS_CONFIGS: Record<InstallmentStatus, InstallmentSt
 
 export interface InstallmentValidationErrors {
   amount_paid?: string;
-  paid_date?: string;
+  paid_on?: string;
   notes?: string;
 } 

@@ -64,7 +64,7 @@ export function calculatePaymentAnalytics(paidInstallments: InstallmentRecord[])
 
   paidInstallments.forEach(installment => {
     const dueDate = new Date(installment.due_date);
-    const paidDate = new Date(installment.paid_date!);
+    const paidDate = new Date(installment.paid_on!);
     const delayDays = Math.floor((paidDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     if (delayDays <= 0) {
@@ -103,13 +103,13 @@ export function calculatePaymentAnalytics(paidInstallments: InstallmentRecord[])
   Object.values(monthlyTrends).forEach(trend => {
     if (trend.lateCount > 0) {
       const monthLateInstallments = paidInstallments.filter(inst => {
-        const paidDate = new Date(inst.paid_date!);
+        const paidDate = new Date(inst.paid_on!);
         return paidDate.getFullYear() === trend.year && 
                paidDate.getMonth() + 1 === new Date(`${trend.year}-${trend.month}-01`).getMonth() + 1;
       });
       
       const monthTotalDelay = monthLateInstallments.reduce((sum, inst) => {
-        const delayDays = Math.max(0, Math.floor((new Date(inst.paid_date!).getTime() - new Date(inst.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+        const delayDays = Math.max(0, Math.floor((new Date(inst.paid_on!).getTime() - new Date(inst.due_date).getTime()) / (1000 * 60 * 60 * 24)));
         return sum + delayDays;
       }, 0);
       
@@ -359,14 +359,14 @@ export function calculatePreviousPeriodDates(
  */
 export function calculateAveragePaymentDelay(installments: InstallmentRecord[]): number {
   const paidInstallments = installments.filter(i => 
-    i.status === 'PAID' && i.paid_date
+    i.status === 'PAID' && i.paid_on
   );
 
   if (paidInstallments.length === 0) return 0;
 
   const totalDelay = paidInstallments.reduce((sum, installment) => {
     const dueDate = new Date(installment.due_date);
-    const paidDate = new Date(installment.paid_date!);
+    const paidDate = new Date(installment.paid_on!);
     const delayDays = Math.max(0, Math.floor((paidDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
     return sum + delayDays;
   }, 0);

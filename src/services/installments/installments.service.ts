@@ -204,7 +204,7 @@ export async function markAsPaid(installmentId: string, payload: MarkAsPaidPaylo
     const updatePayload: UpdateInstallmentPayload = {
       amount_paid: payload.amount_paid,
       status: 'PAID' as InstallmentStatus,
-      paid_date: payload.paid_date,
+      paid_on: payload.paid_on,
       notes: payload.notes
     };
 
@@ -222,7 +222,7 @@ export async function markAsPending(installmentId: string, notes?: string): Prom
   try {
     const updatePayload: UpdateInstallmentPayload = {
       status: 'PENDING' as InstallmentStatus,
-      paid_date: undefined,
+      paid_on: undefined,
       notes
     };
 

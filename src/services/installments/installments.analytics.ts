@@ -98,7 +98,7 @@ export async function getPaymentAnalytics(): Promise<ServiceResponse<PaymentAnal
       .from('installments')
       .select('*')
       .eq('status', 'PAID')
-      .not('paid_date', 'is', null);
+      .not('paid_on', 'is', null);
 
     const { data: paidInstallments, error } = await withTenantFilter(query, context.tenantId);
 
