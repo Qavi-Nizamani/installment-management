@@ -95,7 +95,7 @@ export interface InstallmentStats {
   totalAmountPaid: number;
   totalRemainingDue: number;
   averagePaymentDelay: number;
-  collectionRate: number; // percentage of on-time payments
+  collectionRate: number; // percentage of amount collected vs amount due
 }
 
 // ==================== STATUS CONFIGURATION ====================

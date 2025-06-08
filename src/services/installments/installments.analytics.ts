@@ -59,6 +59,10 @@ export async function getInstallmentStats(): Promise<ServiceResponse<Installment
     const now = new Date();
     const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+    // Calculate totals first
+    const totalAmountDue = installments.reduce((sum: number, installment: InstallmentRecord) => sum + installment.amount_due, 0);
+    const totalAmountPaid = installments.reduce((sum: number, installment: InstallmentRecord) => sum + installment.amount_paid, 0);
+
     const stats: InstallmentStats = {
       totalInstallments: installments.length,
       pendingInstallments: installments.filter((installment: InstallmentRecord) => installment.status === 'PENDING').length,
@@ -69,12 +73,12 @@ export async function getInstallmentStats(): Promise<ServiceResponse<Installment
         new Date(installment.due_date) >= now && 
         new Date(installment.due_date) <= weekFromNow
       ).length,
-      totalAmountDue: installments.reduce((sum: number, installment: InstallmentRecord) => sum + installment.amount_due, 0),
-      totalAmountPaid: installments.reduce((sum: number, installment: InstallmentRecord) => sum + installment.amount_paid, 0),
+      totalAmountDue,
+      totalAmountPaid,
       totalRemainingDue: installments.reduce((sum: number, installment: InstallmentRecord) => sum + Math.max(0, installment.amount_due - installment.amount_paid), 0),
       averagePaymentDelay: (await import('@/helpers/installments.analytics.helper')).calculateAveragePaymentDelay(installments),
-      collectionRate: installments.length > 0 ? 
-        (installments.filter((installment: InstallmentRecord) => installment.status === 'PAID').length / installments.length) * 100 : 0
+      collectionRate: totalAmountDue > 0 ? 
+        (totalAmountPaid / totalAmountDue) * 100 : 0
     };
 
     return { success: true, data: stats };

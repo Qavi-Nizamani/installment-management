@@ -194,6 +194,10 @@ export function calculatePeriodAnalytics(
   const now = new Date();
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+  // Calculate totals first for collection rate
+  const currentTotalAmountDue = currentData.reduce((sum, i) => sum + i.amount_due, 0);
+  const currentTotalAmountPaid = currentData.reduce((sum, i) => sum + i.amount_paid, 0);
+
   const currentStats: InstallmentStats = {
     totalInstallments: currentData.length,
     pendingInstallments: currentData.filter(i => i.status === 'PENDING').length,
@@ -204,20 +208,23 @@ export function calculatePeriodAnalytics(
       new Date(i.due_date) >= now && 
       new Date(i.due_date) <= weekFromNow
     ).length,
-    totalAmountDue: currentData.reduce((sum, i) => sum + i.amount_due, 0),
-    totalAmountPaid: currentData.reduce((sum, i) => sum + i.amount_paid, 0),
+    totalAmountDue: currentTotalAmountDue,
+    totalAmountPaid: currentTotalAmountPaid,
     totalRemainingDue: currentData.reduce((sum, i) => sum + Math.max(0, i.amount_due - i.amount_paid), 0),
     averagePaymentDelay: 0, // Simplified for this calculation
-    collectionRate: currentData.length > 0 ? 
-      (currentData.filter(i => i.status === 'PAID').length / currentData.length) * 100 : 0
+    collectionRate: currentTotalAmountDue > 0 ? 
+      (currentTotalAmountPaid / currentTotalAmountDue) * 100 : 0
   };
 
   // Calculate previous period stats for trends
+  const prevTotalAmountDue = prevData.reduce((sum, i) => sum + i.amount_due, 0);
+  const prevTotalAmountPaid = prevData.reduce((sum, i) => sum + i.amount_paid, 0);
+  
   const prevStats = {
     paidInstallments: prevData.filter(i => i.status === 'PAID').length,
     overdueInstallments: prevData.filter(i => i.status === 'OVERDUE').length,
-    collectionRate: prevData.length > 0 ? 
-      (prevData.filter(i => i.status === 'PAID').length / prevData.length) * 100 : 0
+    collectionRate: prevTotalAmountDue > 0 ? 
+      (prevTotalAmountPaid / prevTotalAmountDue) * 100 : 0
   };
 
   // Calculate trends (percentage change)
