@@ -43,6 +43,18 @@ export interface CustomerStats {
   totalRevenue: number;
 }
 
+// Interface for customer data with nested installment plan information
+interface CustomerWithPlans extends Customer {
+  installment_plans?: InstallmentPlanInfo[];
+}
+
+// Interface for installment plan information used in customer queries
+interface InstallmentPlanInfo {
+  id: string;
+  start_date: string;
+  total_months: number;
+}
+
 export interface ServiceResponse<T> {
   success: boolean;
   data?: T;
@@ -131,13 +143,13 @@ export async function getCustomersWithStats(): Promise<ServiceResponse<CustomerW
     }
 
     // Calculate stats for each customer
-    const customersWithStats: CustomerWithStats[] = (data || []).map((customer: any) => {
+    const customersWithStats: CustomerWithStats[] = (data || []).map((customer: CustomerWithPlans) => {
       const plans = customer.installment_plans || [];
       
       // Calculate active plans (plans that haven't been completed)
       // A plan is considered active if it's within the payment period
       const now = new Date();
-      const activePlans = plans.filter((plan: any) => {
+      const activePlans = plans.filter((plan: InstallmentPlanInfo) => {
         const startDate = new Date(plan.start_date);
         const endDate = new Date(startDate);
         endDate.setMonth(endDate.getMonth() + plan.total_months);

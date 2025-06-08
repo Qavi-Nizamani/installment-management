@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { InstallmentsList } from "./InstallmentsList";
 import { InstallmentsStats } from "./InstallmentsStats";
 import { InstallmentsFilters } from "./InstallmentsFilters";
@@ -43,7 +43,7 @@ export function InstallmentsScreen() {
   });
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchInstallments = async () => {
+  const fetchInstallments = useCallback(async () => {
     try {
       setLoading(true);
       const searchParams: InstallmentSearchParams = {
@@ -66,7 +66,7 @@ export function InstallmentsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, filters]);
 
   const fetchStats = async () => {
     try {
@@ -88,12 +88,10 @@ export function InstallmentsScreen() {
   useEffect(() => {
     fetchInstallments();
     fetchStats();
-  }, []);
+  }, [fetchInstallments]);
 
-  // Refetch when filters or search term change
-  useEffect(() => {
-    fetchInstallments();
-  }, [filters, searchTerm]);
+  // Refetch when filters or search term change (handled by fetchInstallments dependencies)
+  // The previous useEffect above will automatically trigger when fetchInstallments changes
 
   const handleFiltersChange = (newFilters: InstallmentFilters) => {
     setFilters(newFilters);

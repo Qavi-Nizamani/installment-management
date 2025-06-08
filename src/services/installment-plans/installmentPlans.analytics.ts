@@ -9,7 +9,20 @@ import type {
   RevenueAnalytics,
   PaymentAnalytics,
   CustomerAnalytics,
+  InstallmentRecord,
 } from "./installmentPlans.types";
+
+// Interface for plan data with installments used in analytics
+interface PlanWithInstallments {
+  id: string;
+  finance_amount: number;
+  total_price: number;
+  upfront_paid: number;
+  monthly_percentage: number;
+  total_months: number;
+  created_at: string;
+  installments?: InstallmentRecord[];
+}
 
 /**
  * Get comprehensive installment plans statistics
@@ -56,7 +69,7 @@ export async function getInstallmentPlanStats(): Promise<
     let totalMonthlyPayments = 0;
     let newPlansThisMonth = 0;
 
-    (plans || []).forEach((plan: any) => {
+    (plans || []).forEach((plan: PlanWithInstallments) => {
       totalPlans++;
       totalFinanceAmount += plan.finance_amount;
 
@@ -71,17 +84,17 @@ export async function getInstallmentPlanStats(): Promise<
 
       // Calculate plan metrics
       const paidInstallments =
-        plan.installments?.filter((i: any) => i.status === "PAID") || [];
+        plan.installments?.filter((i: InstallmentRecord) => i.status === "PAID") || [];
       const overdueInstallments =
         plan.installments?.filter(
-          (i: any) =>
+          (i: InstallmentRecord) =>
             i.status === "OVERDUE" ||
             (i.status === "PENDING" && new Date(i.due_date) < currentDate)
         ) || [];
 
       const monthsPaid = paidInstallments.length;
       const installmentRevenue = paidInstallments.reduce(
-        (sum: number, i: any) => sum + i.amount_paid,
+        (sum: number, i: InstallmentRecord) => sum + i.amount_paid,
         0
       );
       const planRevenue = plan.upfront_paid + installmentRevenue;
@@ -183,18 +196,18 @@ export async function getRevenueAnalytics(): Promise<
 
     // Calculate revenue metrics
     const upfrontRevenue = (plans || []).reduce(
-      (sum: number, plan: any) => sum + plan.upfront_paid,
+      (sum: number, plan: PlanWithInstallments) => sum + (plan.upfront_paid || 0),
       0
     );
     const installmentRevenue = (paidInstallments || []).reduce(
-      (sum: number, installment: any) => sum + installment.amount_paid,
+      (sum: number, installment: InstallmentRecord) => sum + installment.amount_paid,
       0
     );
     const totalRevenue = upfrontRevenue + installmentRevenue;
 
     // Calculate projected revenue from remaining installments
-    const projectedRevenue = (plans || []).reduce((sum: number, plan: any) => {
-      const remainingAmount = plan.total_price - plan.upfront_paid;
+    const projectedRevenue = (plans || []).reduce((sum: number, plan: PlanWithInstallments) => {
+      const remainingAmount = plan.total_price - (plan.upfront_paid || 0);
       return sum + remainingAmount;
     }, 0);
 
@@ -211,9 +224,9 @@ export async function getRevenueAnalytics(): Promise<
       const monthKey = monthDate.toISOString().slice(0, 7); // YYYY-MM format
 
       const monthRevenue = (paidInstallments || [])
-        .filter((installment: any) => installment.paid_on?.startsWith(monthKey))
+        .filter((installment: InstallmentRecord) => installment.paid_on?.startsWith(monthKey))
         .reduce(
-          (sum: number, installment: any) => sum + installment.amount_paid,
+          (sum: number, installment: InstallmentRecord) => sum + installment.amount_paid,
           0
         );
 
@@ -250,6 +263,7 @@ export async function getRevenueAnalytics(): Promise<
 /**
  * Get payment analytics
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function getPaymentAnalytics(): Promise<
   ServiceResponse<PaymentAnalytics>
 > {
@@ -366,6 +380,7 @@ export async function getPaymentAnalytics(): Promise<
 /**
  * Get customer analytics
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function getCustomerAnalytics(): Promise<
   ServiceResponse<CustomerAnalytics>
 > {
