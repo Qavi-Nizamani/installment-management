@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { InstallmentsList } from "./InstallmentsList";
 import { InstallmentsStats } from "./InstallmentsStats";
 import { InstallmentsFilters } from "./InstallmentsFilters";
-import { getInstallments, getInstallmentStats } from "@/services/installments/installments.service";
-import type { 
-  Installment, 
-  InstallmentStats, 
-  InstallmentFilters, 
-  InstallmentSearchParams 
+import { getInstallments } from "@/services/installments/installments.service";
+import type {
+  Installment,
+  InstallmentStats,
+  InstallmentFilters,
+  InstallmentSearchParams,
 } from "@/types/installments/installments.types";
+import { getInstallmentStats } from "@/services/installments/installments.analytics";
 
 export function InstallmentsScreen() {
   const [installments, setInstallments] = useState<Installment[]>([]);
@@ -37,19 +38,19 @@ export function InstallmentsScreen() {
       const searchParams: InstallmentSearchParams = {
         search_term: searchTerm || undefined,
         filters: Object.keys(filters).length > 0 ? filters : undefined,
-        sort_by: 'due_date',
-        sort_order: 'asc'
+        sort_by: "due_date",
+        sort_order: "asc",
       };
-      
+
       const response = await getInstallments(searchParams);
       if (response.success) {
         setInstallments(response.data);
       } else {
-        console.error('Failed to fetch installments:', response.error);
+        console.error("Failed to fetch installments:", response.error);
         setInstallments([]);
       }
     } catch (error) {
-      console.error('Error fetching installments:', error);
+      console.error("Error fetching installments:", error);
       setInstallments([]);
     } finally {
       setLoading(false);
@@ -63,10 +64,10 @@ export function InstallmentsScreen() {
       if (response.success && response.data) {
         setStats(response.data);
       } else {
-        console.error('Failed to fetch stats:', response.error);
+        console.error("Failed to fetch stats:", response.error);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error("Error fetching stats:", error);
     } finally {
       setStatsLoading(false);
     }
@@ -125,4 +126,4 @@ export function InstallmentsScreen() {
       />
     </div>
   );
-} 
+}

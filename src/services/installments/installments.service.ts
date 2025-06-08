@@ -1,19 +1,50 @@
-import { createClient } from '@/supabase/database/client';
+"use server";
+
+import { cookies } from "next/headers";
+import { createClient } from "@/supabase/database/server";
+import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
 import type { 
   Installment, 
+  InstallmentRecord,
   InstallmentSearchParams, 
-  InstallmentStats,
   UpdateInstallmentPayload,
   MarkAsPaidPayload,
   InstallmentStatus
 } from '@/types/installments/installments.types';
 
-const supabase = createClient();
+// ==================== SERVICE RESPONSE TYPES ====================
+
+export interface ServiceResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+// ==================== DATABASE TYPES ====================
+
+interface InstallmentWithRelations extends InstallmentRecord {
+  installment_plan?: {
+    title: string;
+    customer?: {
+      id: string;
+      name: string;
+      phone?: string;
+    };
+  };
+}
 
 // ==================== FETCH FUNCTIONS ====================
 
-export async function getInstallments(params: InstallmentSearchParams = {}) {
+/**
+ * Get installments with search, filters, and pagination
+ */
+export async function getInstallments(params: InstallmentSearchParams = {}): Promise<ServiceResponse<Installment[]>> {
   try {
+    const context = await requireTenantAccess();
+    
+    const cookieStore = cookies();
+    const supabase = await createClient(cookieStore);
+
     let query = supabase
       .from('installments')
       .select(`
@@ -93,82 +124,55 @@ export async function getInstallments(params: InstallmentSearchParams = {}) {
       query = query.range(start, end);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await withTenantFilter(query, context.tenantId);
 
     if (error) {
       console.error('Error fetching installments:', error);
-      return { success: false, error: error.message, data: [] };
+      return { success: false, error: error.message };
     }
 
     // Transform the data to match our Installment interface
-    const installments: Installment[] = (data || []).map((item: any) => {
-      const installment: any = {
+    const { calculateRemainingDue, calculateDaysOverdue, isUpcoming } = await import('@/helpers/installments.helper');
+    
+    const installments: Installment[] = (data || []).map((item: InstallmentWithRelations) => {
+      return {
         ...item,
         customer: item.installment_plan?.customer,
         plan_title: item.installment_plan?.title,
-        remaining_due: Math.max(0, item.amount_due - item.amount_paid),
-        days_overdue: item.status === 'OVERDUE' ? 
-          Math.floor((new Date().getTime() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)) : 0,
-        is_upcoming: item.status === 'PENDING' && 
-          new Date(item.due_date).getTime() <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).getTime()
-      };
-      
-      // Remove the nested installment_plan object to avoid confusion
-      delete installment.installment_plan;
-      
-      return installment as Installment;
+        remaining_due: calculateRemainingDue(item.amount_due, item.amount_paid),
+        days_overdue: item.status === 'OVERDUE' ? calculateDaysOverdue(item.due_date) : 0,
+        is_upcoming: isUpcoming(item.due_date, item.status),
+        // Remove installment_plan from the final object
+        installment_plan: undefined
+      } as Installment;
     });
 
     return { success: true, data: installments };
   } catch (error) {
     console.error('Error in getInstallments:', error);
-    return { success: false, error: 'Failed to fetch installments', data: [] };
+    return { success: false, error: 'Failed to fetch installments' };
   }
 }
 
-export async function getInstallmentStats(): Promise<{ success: boolean; data?: InstallmentStats; error?: string }> {
-  try {
-    const { data: installments, error } = await supabase
-      .from('installments')
-      .select('*');
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    const now = new Date();
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const stats: InstallmentStats = {
-      totalInstallments: installments.length,
-      pendingInstallments: installments.filter((i: any) => i.status === 'PENDING').length,
-      paidInstallments: installments.filter((i: any) => i.status === 'PAID').length,
-      overdueInstallments: installments.filter((i: any) => i.status === 'OVERDUE').length,
-      upcomingInstallments: installments.filter((i: any) => 
-        i.status === 'PENDING' && 
-        new Date(i.due_date) >= now && 
-        new Date(i.due_date) <= weekFromNow
-      ).length,
-      totalAmountDue: installments.reduce((sum: number, i: any) => sum + i.amount_due, 0),
-      totalAmountPaid: installments.reduce((sum: number, i: any) => sum + i.amount_paid, 0),
-      totalRemainingDue: installments.reduce((sum: number, i: any) => sum + Math.max(0, i.amount_due - i.amount_paid), 0),
-      averagePaymentDelay: 0, // TODO: Calculate based on paid_date vs due_date
-      collectionRate: installments.length > 0 ? 
-        (installments.filter((i: any) => i.status === 'PAID').length / installments.length) * 100 : 0
-    };
-
-    return { success: true, data: stats };
-  } catch (error) {
-    console.error('Error in getInstallmentStats:', error);
-    return { success: false, error: 'Failed to fetch installment stats' };
-  }
-}
+// ==================== ANALYTICS FUNCTIONS ====================
+// Analytics functions have been moved to ./installments.analytics.ts for better organization
+// 
+// Note: Analytics functions cannot be re-exported due to "use server" directive restrictions.
+// Import analytics functions directly from '@/services/installments/installments.analytics' when needed.
 
 // ==================== UPDATE FUNCTIONS ====================
 
-export async function updateInstallment(installmentId: string, payload: UpdateInstallmentPayload) {
+/**
+ * Update installment with new data
+ */
+export async function updateInstallment(installmentId: string, payload: UpdateInstallmentPayload): Promise<ServiceResponse<InstallmentRecord>> {
   try {
-    const { data, error } = await supabase
+    const context = await requireTenantAccess();
+    
+    const cookieStore = cookies();
+    const supabase = await createClient(cookieStore);
+
+    const query = supabase
       .from('installments')
       .update({
         ...payload,
@@ -177,6 +181,8 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
       .eq('id', installmentId)
       .select()
       .single();
+
+    const { data, error } = await withTenantFilter(query, context.tenantId);
 
     if (error) {
       console.error('Error updating installment:', error);
@@ -190,7 +196,10 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
   }
 }
 
-export async function markAsPaid(installmentId: string, payload: MarkAsPaidPayload) {
+/**
+ * Mark installment as paid with payment details
+ */
+export async function markAsPaid(installmentId: string, payload: MarkAsPaidPayload): Promise<ServiceResponse<InstallmentRecord>> {
   try {
     const updatePayload: UpdateInstallmentPayload = {
       amount_paid: payload.amount_paid,
@@ -206,7 +215,10 @@ export async function markAsPaid(installmentId: string, payload: MarkAsPaidPaylo
   }
 }
 
-export async function markAsPending(installmentId: string, notes?: string) {
+/**
+ * Mark installment as pending
+ */
+export async function markAsPending(installmentId: string, notes?: string): Promise<ServiceResponse<InstallmentRecord>> {
   try {
     const updatePayload: UpdateInstallmentPayload = {
       status: 'PENDING' as InstallmentStatus,
@@ -220,28 +232,3 @@ export async function markAsPending(installmentId: string, notes?: string) {
     return { success: false, error: 'Failed to mark installment as pending' };
   }
 }
-
-// ==================== UTILITY FUNCTIONS ====================
-
-export function calculateRemainingDue(amountDue: number, amountPaid: number): number {
-  return Math.max(0, amountDue - amountPaid);
-}
-
-export function calculateDaysOverdue(dueDate: string): number {
-  const due = new Date(dueDate);
-  const now = new Date();
-  
-  if (now <= due) return 0;
-  
-  return Math.floor((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-export function isUpcoming(dueDate: string, status: InstallmentStatus, daysAhead: number = 7): boolean {
-  if (status !== 'PENDING') return false;
-  
-  const due = new Date(dueDate);
-  const now = new Date();
-  const futureDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
-  
-  return due >= now && due <= futureDate;
-} 
