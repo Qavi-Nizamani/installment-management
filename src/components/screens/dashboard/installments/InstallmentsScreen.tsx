@@ -29,7 +29,18 @@ export function InstallmentsScreen() {
   });
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [filters, setFilters] = useState<InstallmentFilters>({});
+  
+  // Default to showing installments due within the next 30 days
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  
+  const [filters, setFilters] = useState<InstallmentFilters>({
+    date_range: {
+      start_date: today.toISOString().split('T')[0],
+      end_date: thirtyDaysFromNow.toISOString().split('T')[0]
+    }
+  });
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchInstallments = async () => {
@@ -43,7 +54,7 @@ export function InstallmentsScreen() {
       };
 
       const response = await getInstallments(searchParams);
-      if (response.success) {
+      if (response.success && response.data) {
         setInstallments(response.data);
       } else {
         console.error("Failed to fetch installments:", response.error);
