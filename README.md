@@ -13,7 +13,7 @@ A modern, full-stack web application for managing customer installment plans and
 
 ## 🚀 Live Demo
 
-[Coming Soon - Deploy to Vercel]
+https://installment-management.vercel.app/
 
 ## ✨ Features
 
