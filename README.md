@@ -128,7 +128,7 @@ A modern, full-stack web application for managing customer installment plans and
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/installment-management.git
+   git clone https://github.com/Qavi-Nizamani/installment-management
    cd installment-management
    ```
 
@@ -146,7 +146,6 @@ A modern, full-stack web application for managing customer installment plans and
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    ```
 
 4. **Run database migrations**
@@ -210,10 +209,6 @@ This is a showcase project, but contributions are welcome! Please feel free to:
 - Submit pull requests
 - Improve documentation
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 👨‍💻 About the Developer
 
 This project was built to demonstrate:
@@ -229,9 +224,9 @@ This project was built to demonstrate:
 
 ## 🔗 Links
 
-- **Portfolio**: [Your Portfolio URL]
-- **LinkedIn**: [Your LinkedIn]
-- **GitHub**: [Your GitHub]
+- **Portfolio**: [https://qavi.me/]
+- **LinkedIn**: [https://www.linkedin.com/in/qavi-nizamani-356144198/]
+- **GitHub**: [https://github.com/Qavi-Nizamani]
 
 ---
 
