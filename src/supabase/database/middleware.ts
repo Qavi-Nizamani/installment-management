@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
@@ -11,17 +11,17 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (name: string) => {
+        get: (name) => {
           return request.cookies.get(name)?.value;
         },
-        set: (name: string, value: string, options: CookieOptions) => {
+        set: (name, value, options) => {
           request.cookies.set(name, value);
           supabaseResponse = NextResponse.next({
             request,
           });
           supabaseResponse.cookies.set(name, value, options);
         },
-        remove: (name: string, options: CookieOptions) => {
+        remove: (name, options) => {
           request.cookies.delete(name);
           supabaseResponse = NextResponse.next({
             request,
@@ -37,19 +37,18 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   // IMPORTANT: DO NOT REMOVE auth.getUser()
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
+  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  } else if (user && request.nextUrl.pathname.startsWith("/auth")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
