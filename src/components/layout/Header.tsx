@@ -15,14 +15,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { logout, redirectAfterLogout } from "@/services/auth/logout";
+import { logout } from "@/services/auth/logout";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user, loading } = useAuth();
   const [isPending, startTransition] = useTransition();
-
+  const router = useRouter();
   const handleLogout = () => {
     startTransition(async () => {
       try {
@@ -30,7 +31,7 @@ export function Header() {
         
         if (result.success) {
           toast.success(result.message || "Successfully logged out");
-          await redirectAfterLogout();
+          router.push("/auth/login");
         } else {
           toast.error(result.error || "Failed to logout");
         }

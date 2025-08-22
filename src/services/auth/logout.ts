@@ -1,13 +1,8 @@
-"use server";
-
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { createClient } from "@/supabase/database/server";
+import { createClient } from "@/supabase/database/client";
 import { LoginResponse } from "@/types/auth";
 
 export async function logout(): Promise<LoginResponse> {
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = createClient();
 
   try {
     const { error } = await supabase.auth.signOut();
@@ -30,7 +25,3 @@ export async function logout(): Promise<LoginResponse> {
     };
   }
 }
-
-export async function redirectAfterLogout() {
-  redirect("/auth/login");
-} 

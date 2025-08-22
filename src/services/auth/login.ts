@@ -1,13 +1,9 @@
-"use server";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { createClient } from "@/supabase/database/server";
+import { createClient } from "@/supabase/database/client";
 import { LoginPayload, LoginResponse } from "@/types/auth";
 
 export async function login(data: LoginPayload): Promise<LoginResponse> {
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = createClient();
 
   try {
     const { error } = await supabase.auth.signInWithPassword({
@@ -33,7 +29,3 @@ export async function login(data: LoginPayload): Promise<LoginResponse> {
     };
   }
 }
-
-export async function redirectAfterLogin() {
-  redirect("/dashboard");
-} 

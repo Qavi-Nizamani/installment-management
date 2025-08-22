@@ -5,18 +5,32 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { LoginSchema, LoginPayload } from "@/types/auth";
-import { login, redirectAfterLogin } from "@/services/auth/login";
+import { login } from "@/services/auth/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string>("");
   const [isPending, startTransition] = useTransition();
-
+  const router = useRouter();
   const form = useForm<LoginPayload>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -29,9 +43,8 @@ export default function LoginScreen() {
     setError("");
     startTransition(async () => {
       const result = await login(data);
-      
       if (result.success) {
-        await redirectAfterLogin();
+        router.push("/dashboard");
       } else {
         setError(result.error || "Login failed. Please try again.");
       }
@@ -42,7 +55,9 @@ export default function LoginScreen() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Sign in to your account</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Sign in to your account
+          </CardTitle>
           <CardDescription className="text-center">
             Enter your email and password to access your account
           </CardDescription>
@@ -105,16 +120,10 @@ export default function LoginScreen() {
               />
 
               {error && (
-                <div className="text-red-500 text-sm text-center">
-                  {error}
-                </div>
+                <div className="text-red-500 text-sm text-center">{error}</div>
               )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isPending}
-              >
+              <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -128,8 +137,8 @@ export default function LoginScreen() {
           </Form>
 
           <div className="mt-6 text-center text-sm">
-            <Link 
-              href="/auth/forgot-password" 
+            <Link
+              href="/auth/forgot-password"
               className="text-blue-600 hover:text-blue-500"
             >
               Forgot your password?
@@ -138,8 +147,8 @@ export default function LoginScreen() {
 
           <div className="mt-4 text-center text-sm">
             <span className="text-gray-600">Don&apos;t have an account? </span>
-            <Link 
-              href="/auth/signup" 
+            <Link
+              href="/auth/signup"
               className="text-blue-600 hover:text-blue-500 font-medium"
             >
               Sign up
@@ -149,4 +158,4 @@ export default function LoginScreen() {
       </Card>
     </div>
   );
-} 
+}
