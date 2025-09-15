@@ -4,8 +4,9 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SignupSchema, SignupPayload } from "@/types/auth";
-import { signup, redirectAfterSignup } from "@/services/auth/signup";
+import { signup } from "@/services/auth/signup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,8 @@ export default function SignupScreen() {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [isPending, startTransition] = useTransition();
+  const [isSignupComplete, setIsSignupComplete] = useState(false);
+  const router = useRouter();
 
   const form = useForm<SignupPayload>({
     resolver: zodResolver(SignupSchema),
@@ -36,10 +39,11 @@ export default function SignupScreen() {
       
       if (result.success) {
         setSuccess(result.message || "Account created successfully!");
+        setIsSignupComplete(true); // Mark signup as complete
         form.reset();
         // Redirect after a short delay to show success message
-        setTimeout(async () => {
-          await redirectAfterSignup();
+        setTimeout(() => {
+          router.push("/onboarding/setup-workspace");
         }, 2000);
       } else {
         setError(result.error || "Signup failed. Please try again.");
@@ -70,7 +74,7 @@ export default function SignupScreen() {
                         type="email"
                         placeholder="Enter your email"
                         {...field}
-                        disabled={isPending}
+                        disabled={isPending || isSignupComplete}
                       />
                     </FormControl>
                     <FormMessage />
@@ -90,7 +94,7 @@ export default function SignupScreen() {
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           {...field}
-                          disabled={isPending}
+                          disabled={isPending || isSignupComplete}
                         />
                         <Button
                           type="button"
@@ -98,7 +102,7 @@ export default function SignupScreen() {
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowPassword(!showPassword)}
-                          disabled={isPending}
+                          disabled={isPending || isSignupComplete}
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -125,7 +129,7 @@ export default function SignupScreen() {
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
                           {...field}
-                          disabled={isPending}
+                          disabled={isPending || isSignupComplete}
                         />
                         <Button
                           type="button"
@@ -133,7 +137,7 @@ export default function SignupScreen() {
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          disabled={isPending}
+                          disabled={isPending || isSignupComplete}
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -163,13 +167,15 @@ export default function SignupScreen() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isPending}
+                disabled={isPending || isSignupComplete}
               >
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating account...
                   </>
+                ) : isSignupComplete ? (
+                  "Account created! Redirecting..."
                 ) : (
                   "Create account"
                 )}

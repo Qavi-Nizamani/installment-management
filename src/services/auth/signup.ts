@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { createClient } from "@/supabase/database/server";
 import { SignupPayload, LoginResponse } from "@/types/auth";
 
@@ -33,7 +32,3 @@ export async function signup(data: SignupPayload): Promise<LoginResponse> {
     };
   }
 }
-
-export async function redirectAfterSignup() {
-  redirect("/onboarding/setup-workspace");
-} 
