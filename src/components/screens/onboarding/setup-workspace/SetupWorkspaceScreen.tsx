@@ -4,12 +4,13 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useRouter } from "next/navigation";
 import { Building2, Loader2, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { setupWorkspace, redirectAfterWorkspaceSetup, WorkspaceSetupPayload } from "@/services/onboarding/setup-workspace";
+import { setupWorkspace, WorkspaceSetupPayload } from "@/services/onboarding/setup-workspace";
 import { toast } from "sonner";
 
 const WorkspaceSetupSchema = z.object({
@@ -23,6 +24,7 @@ const WorkspaceSetupSchema = z.object({
 export default function SetupWorkspaceScreen() {
   const [error, setError] = useState<string>("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<WorkspaceSetupPayload>({
     resolver: zodResolver(WorkspaceSetupSchema),
@@ -39,7 +41,7 @@ export default function SetupWorkspaceScreen() {
         
         if (result.success) {
           toast.success(result.message || "Workspace created successfully!");
-          await redirectAfterWorkspaceSetup();
+          router.push("/dashboard");
         } else {
           setError(result.error || "Failed to create workspace. Please try again.");
         }
