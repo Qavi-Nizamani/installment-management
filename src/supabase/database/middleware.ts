@@ -47,9 +47,36 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   } else if (user && request.nextUrl.pathname.startsWith("/auth")) {
+    // User is authenticated, check if they have a tenant
+    const { data: existingMember } = await supabase
+      .from('members')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .single();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    if (existingMember) {
+      // User has a tenant, redirect to dashboard
+      url.pathname = "/dashboard";
+    } else {
+      // User doesn't have a tenant, redirect to onboarding
+      url.pathname = "/onboarding/setup-workspace";
+    }
     return NextResponse.redirect(url);
+  } else if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    // User is authenticated and trying to access dashboard, check if they have a tenant
+    const { data: existingMember } = await supabase
+      .from('members')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!existingMember) {
+      // User doesn't have a tenant, redirect to onboarding
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding/setup-workspace";
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
