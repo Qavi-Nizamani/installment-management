@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
 
@@ -69,8 +68,7 @@ export async function getCustomers(): Promise<ServiceResponse<Customer[]>> {
     // Use tenant guard to get secure context
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('customers')
@@ -109,8 +107,7 @@ export async function getCustomersWithStats(): Promise<ServiceResponse<CustomerW
     // Use tenant guard to get secure context
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get customers with their installment plans data
     const query = supabase
@@ -190,8 +187,7 @@ export async function getCustomerById(id: string): Promise<ServiceResponse<Custo
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('customers')
@@ -230,8 +226,7 @@ export async function createCustomer(payload: CreateCustomerPayload): Promise<Se
     // Ensure user has tenant access
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('customers')
@@ -276,8 +271,7 @@ export async function updateCustomer(
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('customers')
@@ -319,8 +313,7 @@ export async function deleteCustomer(id: string): Promise<ServiceResponse<void>>
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('customers')
@@ -360,8 +353,7 @@ export async function searchCustomers(searchTerm: string): Promise<ServiceRespon
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('customers')
@@ -399,8 +391,7 @@ export async function getCustomerStats(): Promise<ServiceResponse<CustomerStats>
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('customers')

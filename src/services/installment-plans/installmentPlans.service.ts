@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
 import type {
@@ -18,8 +17,7 @@ export async function getInstallmentPlans(): Promise<ServiceResponse<Installment
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get installment plans with customer data
     const query = supabase
@@ -71,8 +69,7 @@ export async function getInstallmentPlanById(id: string): Promise<ServiceRespons
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installment_plans')
@@ -121,8 +118,7 @@ export async function createInstallmentPlan(
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Validate that customer belongs to the same tenant
     const { data: customer, error: customerError } = await supabase
@@ -192,8 +188,7 @@ export async function updateInstallmentPlan(
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // If customer_id is being updated, validate it belongs to same tenant
     if (payload.customer_id) {
@@ -252,8 +247,7 @@ export async function deleteInstallmentPlan(id: string): Promise<ServiceResponse
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installment_plans')
@@ -293,8 +287,7 @@ export async function searchInstallmentPlans(
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installment_plans')
@@ -364,8 +357,7 @@ function calculateMonthlyInstallment(financeAmount: number, monthlyPercentage: n
  */
 async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 'finance_amount' | 'total_months' | 'upfront_paid' | 'total_price' | 'monthly_percentage' | 'business_model'>) {
   try {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get installment records for this plan
     const { data: installments } = await supabase
@@ -448,8 +440,7 @@ async function calculatePlanMetrics(planId: string, plan: Pick<InstallmentPlan, 
  */
 async function generateInstallmentRecords(planId: string, plan: Pick<InstallmentPlanRecord, 'finance_amount' | 'total_months' | 'start_date' | 'tenant_id' | 'monthly_percentage'>) {
   try {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Calculate monthly amount using trade profit formula
     const monthlyAmount = calculateMonthlyInstallment(plan.finance_amount, plan.monthly_percentage, plan.total_months);

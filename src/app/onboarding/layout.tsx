@@ -7,8 +7,7 @@ export default async function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createClient();
 
   // Check if user is authenticated
   const { data: { user }, error } = await supabase.auth.getUser();

@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
 import type { 
@@ -42,8 +41,7 @@ export async function getInstallments(params: InstallmentSearchParams = {}): Pro
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     let query = supabase
       .from('installments')
@@ -169,8 +167,7 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installments')
@@ -206,8 +203,7 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
 export async function markAsPaid(installmentId: string, payload: MarkAsPaidPayload): Promise<ServiceResponse<InstallmentRecord>> {
   try {
     const context = await requireTenantAccess();
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get the current installment
     const { data: currentInstallment, error: fetchError } = await withTenantFilter(

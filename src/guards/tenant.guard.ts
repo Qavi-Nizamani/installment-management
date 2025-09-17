@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { MEMBER_ROLE, MEMBER_ROLE_HIERARCHY } from "@/constants/member.constants";
 
@@ -14,8 +13,7 @@ export interface TenantContext {
  */
 export async function getTenantContext(): Promise<TenantContext | null> {
   try {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get the authenticated user
     const {

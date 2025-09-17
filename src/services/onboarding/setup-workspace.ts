@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 
 export interface WorkspaceSetupPayload {
@@ -15,8 +14,7 @@ export interface WorkspaceSetupResponse {
 }
 
 export async function setupWorkspace(data: WorkspaceSetupPayload): Promise<WorkspaceSetupResponse> {
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createClient();
 
   try {
     // Get the current authenticated user

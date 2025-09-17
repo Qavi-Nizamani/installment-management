@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
 import type { 
@@ -42,8 +41,7 @@ export async function getInstallmentStats(): Promise<ServiceResponse<Installment
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installments')
@@ -95,8 +93,7 @@ export async function getPaymentAnalytics(): Promise<ServiceResponse<PaymentAnal
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installments')
@@ -128,8 +125,7 @@ export async function getCollectionAnalytics(): Promise<ServiceResponse<Collecti
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase
       .from('installments')
@@ -162,8 +158,7 @@ export async function getPeriodAnalytics(
   try {
     const context = await requireTenantAccess();
     
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const { calculatePeriodDates, calculatePreviousPeriodDates, calculatePeriodAnalytics } = await import('@/helpers/installments.analytics.helper');
     const { start, end } = calculatePeriodDates(period, startDate);

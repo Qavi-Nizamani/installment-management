@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
 import type {
@@ -33,8 +32,7 @@ export async function getInstallmentPlanStats(): Promise<
   try {
     const context = await requireTenantAccess();
 
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get all installment plans with installments
     const query = supabase.from("installment_plans").select(`
@@ -163,8 +161,7 @@ export async function getRevenueAnalytics(): Promise<
   try {
     const context = await requireTenantAccess();
 
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get installment plans with payments
     const plansQuery = supabase.from("installment_plans").select("*");
@@ -270,8 +267,7 @@ export async function getPaymentAnalytics(): Promise<
   try {
     const context = await requireTenantAccess();
 
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase.from("installments").select("*");
 
@@ -387,8 +383,7 @@ export async function getCustomerAnalytics(): Promise<
   try {
     const context = await requireTenantAccess();
 
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const supabase = await createClient();
 
     const query = supabase.from("installment_plans").select(`
         *,
