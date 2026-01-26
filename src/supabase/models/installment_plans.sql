@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS installment_plans (
     total_months INT NOT NULL CHECK (total_months > 0),
     start_date DATE NOT NULL,
     notes TEXT,
+    business_model TEXT NOT NULL DEFAULT 'PRODUCT_OWNER' CHECK (business_model IN ('PRODUCT_OWNER', 'FINANCER_ONLY')),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT valid_payment CHECK (upfront_paid + finance_amount = total_price)
