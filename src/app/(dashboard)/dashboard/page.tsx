@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { StatsCards } from "@/components/screens/dashboard/StatsCards";
-import { RevenueChart } from "@/components/screens/dashboard/RevenueChart";
+// import { RevenueChart } from "@/components/screens/dashboard/RevenueChart";
 import { RecentInstallments } from "@/components/screens/dashboard/RecentInstallments";
-import { OverdueAlert } from "@/components/screens/dashboard/OverdueAlert";
+// import { OverdueAlert } from "@/components/screens/dashboard/OverdueAlert";
 
 export const metadata: Metadata = {
   title: "Dashboard - Installment Management",
@@ -16,19 +16,19 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-2">
-          Welcome back! Here&apos;s what&apos;s happening with your business today.
+          Here&apos;s what&apos;s happening with your business today.
         </p>
       </div>
 
       {/* Overdue Alert */}
-      <OverdueAlert />
+      {/* <OverdueAlert /> */}
 
       {/* Stats Cards */}
       <StatsCards />
 
       {/* Charts and Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RevenueChart />
+        {/* <RevenueChart /> */}
         <RecentInstallments />
       </div>
     </div>
