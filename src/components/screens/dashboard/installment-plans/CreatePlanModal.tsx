@@ -54,7 +54,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     monthly_percentage: "",
     total_months: "",
     start_date: "",
-    business_model: 'PRODUCT_OWNER',
+    business_model: 'FINANCER_ONLY',
     notes: "",
   });
 
@@ -74,7 +74,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     const total = parseFloat(formData.total_price) || 0;
     const upfront = parseFloat(formData.upfront_paid) || 0;
     const finance = Math.max(0, total - upfront);
-    
+
     setFormData(prev => ({
       ...prev,
       finance_amount: finance.toString()
@@ -86,22 +86,22 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     const financeAmount = parseFloat(formData.finance_amount) || 0;
     const monthlyPercentage = parseFloat(formData.monthly_percentage) || 0;
     const totalMonths = parseInt(formData.total_months) || 1;
-    
+
     if (financeAmount <= 0 || totalMonths <= 0) {
       return { monthlyInstallment: 0, futureValue: 0, totalAmount: 0 };
     }
-    
+
     // Trade Profit: Total Profit = Principal × Profit Rate × Time
     const totalProfit = financeAmount * (monthlyPercentage / 100) * totalMonths;
     const futureValue = financeAmount + totalProfit;
-    
+
     // Monthly Installment = Total Amount / Total Months
     const monthlyInstallment = futureValue / totalMonths;
-    
+
     // Total amount = upfront + future value
     const upfront = parseFloat(formData.upfront_paid) || 0;
     const totalAmount = upfront + futureValue;
-    
+
     return { monthlyInstallment, futureValue, totalAmount };
   };
 
@@ -146,12 +146,12 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
       setLoading(true);
-      
+
       const payload: CreateInstallmentPlanPayload = {
         customer_id: formData.customer_id,
         title: formData.title.trim(),
@@ -166,7 +166,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
       };
 
       const response = await createInstallmentPlan(payload);
-      
+
       if (response.success) {
         onPlanCreated();
         onClose();
@@ -219,7 +219,8 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
             </div>
           )}
 
-          <div className="space-y-2">
+          {/* Business Model Selection */}
+          {/* <div className="space-y-2">
             <Label htmlFor="business_model">Business Model *</Label>
             <Select
               value={formData.business_model}
@@ -251,13 +252,13 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 : "Your revenue = profit portion only (monthly percentage on financed amount)"
               }
             </p>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="customer">Customer *</Label>
-              <Select 
-                value={formData.customer_id} 
+              <Select
+                value={formData.customer_id}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}
               >
                 <SelectTrigger>
@@ -406,7 +407,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                     {formData.business_model === 'PRODUCT_OWNER' ? 'Your Total Revenue:' : 'Your Profit Revenue:'}
                   </span>
                   <p className="font-bold text-green-900">
-                    ${formData.business_model === 'PRODUCT_OWNER' 
+                    ${formData.business_model === 'PRODUCT_OWNER'
                       ? previewAmounts.totalAmount.toFixed(2)
                       : (previewAmounts.futureValue - parseFloat(formData.finance_amount || "0")).toFixed(2)
                     }

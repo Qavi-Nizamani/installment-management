@@ -57,13 +57,8 @@ export async function getInstallments(params: InstallmentSearchParams = {}): Pro
         )
       `);
 
-    // Apply search filter
-    if (params.search_term) {
-      query = query.or(`
-        installment_plan.title.ilike.%${params.search_term}%,
-        installment_plan.customer.name.ilike.%${params.search_term}%
-      `);
-    }
+    // Note: Search filter for nested relations (plan title, customer name) is applied after fetching
+    // because PostgREST doesn't support filtering on nested relation fields in .or() queries
 
     // Apply status filter
     if (params.filters?.status?.length) {
@@ -132,7 +127,7 @@ export async function getInstallments(params: InstallmentSearchParams = {}): Pro
     // Transform the data to match our Installment interface
     const { calculateRemainingDue, calculateDaysOverdue, isUpcoming } = await import('@/helpers/installments.helper');
     
-    const installments: Installment[] = (data || []).map((item: InstallmentWithRelations) => {
+    let installments: Installment[] = (data || []).map((item: InstallmentWithRelations) => {
       return {
         ...item,
         customer: item.installment_plan?.customer,
@@ -144,6 +139,16 @@ export async function getInstallments(params: InstallmentSearchParams = {}): Pro
         installment_plan: undefined
       } as Installment;
     });
+
+    // Apply search filter for nested relations (plan title, customer name)
+    if (params.search_term) {
+      const searchTermLower = params.search_term.toLowerCase();
+      installments = installments.filter((installment) => {
+        const planTitleMatch = installment.plan_title?.toLowerCase().includes(searchTermLower);
+        const customerNameMatch = installment.customer?.name?.toLowerCase().includes(searchTermLower);
+        return planTitleMatch || customerNameMatch;
+      });
+    }
 
     return { success: true, data: installments };
   } catch (error) {

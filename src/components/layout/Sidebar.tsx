@@ -44,47 +44,47 @@ const navigation = [
     href: "/dashboard/installments",
     icon: Calendar,
   },
-  {
-    name: "Revenue",
-    href: "/dashboard/revenue",
-    icon: TrendingUp,
-  },
-  {
-    name: "Expenses",
-    href: "/dashboard/expenses",
-    icon: TrendingDown,
-  },
-  {
-    name: "Profit Analysis",
-    href: "/dashboard/profit",
-    icon: BarChart3,
-  },
-  {
-    name: "Financial Overview",
-    href: "/dashboard/financial",
-    icon: PiggyBank,
-  },
+  // {
+  //   name: "Revenue",
+  //   href: "/dashboard/revenue",
+  //   icon: TrendingUp,
+  // },
+  // {
+  //   name: "Expenses",
+  //   href: "/dashboard/expenses",
+  //   icon: TrendingDown,
+  // },
+  // {
+  //   name: "Profit Analysis",
+  //   href: "/dashboard/profit",
+  //   icon: BarChart3,
+  // },
+  // {
+  //   name: "Financial Overview",
+  //   href: "/dashboard/financial",
+  //   icon: PiggyBank,
+  // },
   {
     name: "Members",
-    href: "/dashboard/members",
+    href: "/dashboard/settings/members",
     icon: UserCheck,
   },
-  {
-    name: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-  },
+  // {
+  //   name: "Settings",
+  //   href: "/dashboard/settings",
+  //   icon: Settings,
+  // },
 ];
 
 // Reusable sidebar content component
-function SidebarContent({ 
-  isExpanded, 
-  pathname, 
+function SidebarContent({
+  isExpanded,
+  pathname,
   onNavigate,
   showTooltips = false
-}: { 
-  isExpanded: boolean; 
-  pathname: string; 
+}: {
+  isExpanded: boolean;
+  pathname: string;
   onNavigate?: () => void;
   showTooltips?: boolean;
 }) {
@@ -111,9 +111,9 @@ function SidebarContent({
           const Icon = item.icon;
 
           const navItem = (
-            <Link 
-              href={item.href} 
-              key={item.name} 
+            <Link
+              href={item.href}
+              key={item.name}
               onClick={onNavigate}
             >
               <Button
@@ -199,15 +199,15 @@ export function Sidebar() {
             <Menu className="h-8 w-8" />
           </Button>
         </SheetTrigger>
-        <SheetContent 
-          side="left" 
+        <SheetContent
+          side="left"
           className="w-64 p-0 bg-white border-r border-gray-200"
         >
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <div className="flex flex-col h-full">
-            <SidebarContent 
-              isExpanded={true} 
-              pathname={pathname} 
+            <SidebarContent
+              isExpanded={true}
+              pathname={pathname}
               onNavigate={handleMobileNavigate}
             />
           </div>
@@ -227,13 +227,12 @@ export function Sidebar() {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <SidebarContent 
-          isExpanded={isHovered} 
-          pathname={pathname} 
-          showTooltips={true} 
+        <SidebarContent
+          isExpanded={isHovered}
+          pathname={pathname}
+          showTooltips={true}
         />
       </div>
     </TooltipProvider>
   );
 }
- 

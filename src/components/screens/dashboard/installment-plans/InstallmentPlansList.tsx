@@ -151,7 +151,7 @@ export function InstallmentPlansList({
               <TableRow>
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Business Model</TableHead>
+                {/* <TableHead>Business Model</TableHead> */}
                 <TableHead>Total Price</TableHead>
                 <TableHead>Total Profit</TableHead>
                 <TableHead>Monthly Amount</TableHead>
@@ -219,7 +219,7 @@ export function InstallmentPlansList({
               <TableRow>
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Business Model</TableHead>
+                {/* <TableHead>Business Model</TableHead> */}
                 <TableHead>Total Price</TableHead>
                 <TableHead>Total Profit</TableHead>
                 <TableHead>Monthly Amount</TableHead>
@@ -312,14 +312,14 @@ export function InstallmentPlansList({
                       </div>
                     </TableCell>
                     
-                    <TableCell>
+                    {/* <TableCell>
                       <div className="font-medium text-green-600">
                         ${(plan.my_revenue || 0).toFixed(2)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {plan.business_model === 'PRODUCT_OWNER' ? 'total earned' : 'profit earned'}
                       </div>
-                    </TableCell>
+                    </TableCell> */}
                     
                     <TableCell>
                       <Badge variant={statusConfig.variant} className="flex items-center space-x-1">
