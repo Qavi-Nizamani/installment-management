@@ -21,7 +21,8 @@ export async function signup(data: SignupPayload): Promise<LoginResponse> {
 
     return {
       success: true,
-      message: "Account created successfully! Please complete your workspace setup.",
+      message:
+        "Account created! Check your email to verify your account, then sign in to complete workspace setup.",
     };
   } catch {
     return {

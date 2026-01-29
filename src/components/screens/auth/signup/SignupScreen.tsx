@@ -39,12 +39,12 @@ export default function SignupScreen() {
       
       if (result.success) {
         setSuccess(result.message || "Account created successfully!");
-        setIsSignupComplete(true); // Mark signup as complete
+        setIsSignupComplete(true);
         form.reset();
-        // Redirect after a short delay to show success message
+        // Redirect to login after a short delay—user must verify email first
         setTimeout(() => {
-          router.push("/onboarding/setup-workspace");
-        }, 2000);
+          router.push("/auth/login?verified=check_email");
+        }, 2500);
       } else {
         setError(result.error || "Signup failed. Please try again.");
       }

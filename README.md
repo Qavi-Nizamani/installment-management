@@ -148,6 +148,8 @@ https://installment-management.vercel.app/
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
+   **Email verification:** For signup verification links to work, add your app URLs to Supabase **Redirect URLs** (Authentication → URL Configuration): e.g. `http://localhost:3000/auth/callback` and your production URL. Set **Site URL** to your app origin.
+
 4. **Run database migrations**
    ```bash
    # Apply the SQL migrations in supabase/migrations/

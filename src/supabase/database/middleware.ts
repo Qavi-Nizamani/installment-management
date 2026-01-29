@@ -46,8 +46,8 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
-  } else if (user && request.nextUrl.pathname.startsWith("/auth")) {
-    // User is authenticated, check if they have a tenant
+  } else if (user && request.nextUrl.pathname.startsWith("/auth") && !request.nextUrl.pathname.startsWith("/auth/callback")) {
+    // User is authenticated, check if they have a tenant (allow /auth/callback for email verification)
     const { data: existingMember } = await supabase
       .from('members')
       .select('tenant_id')

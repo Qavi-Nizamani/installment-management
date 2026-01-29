@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { LoginSchema, LoginPayload } from "@/types/auth";
 import { login } from "@/services/auth/login";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,17 @@ import { useRouter } from "next/navigation";
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("verified") === "check_email") {
+      setSuccess("Check your email to verify your account, then sign in below.");
+      router.replace("/auth/login", { scroll: false });
+    }
+  }, [searchParams, router]);
   const form = useForm<LoginPayload>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -41,6 +51,7 @@ export default function LoginScreen() {
 
   const onSubmit = (data: LoginPayload) => {
     setError("");
+    setSuccess("");
     startTransition(async () => {
       const result = await login(data);
       if (result.success) {
@@ -121,6 +132,10 @@ export default function LoginScreen() {
 
               {error && (
                 <div className="text-red-500 text-sm text-center">{error}</div>
+              )}
+
+              {success && (
+                <div className="text-green-600 text-sm text-center">{success}</div>
               )}
 
               <Button type="submit" className="w-full" disabled={isPending}>
