@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
+import { createTenantForUser } from "@/services/tenant/create-tenant-for-user";
 
 export interface WorkspaceSetupPayload {
   workspaceName: string;
@@ -17,22 +18,20 @@ export async function setupWorkspace(data: WorkspaceSetupPayload): Promise<Works
   const supabase = await createClient();
 
   try {
-    // Get the current authenticated user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
-      return {
-        success: false,
-        error: "You must be logged in to create a workspace.",
-      };
+      return { success: false, error: "You must be logged in to create a workspace." };
     }
 
-    // Check if user already has a tenant
     const { data: existingMember } = await supabase
-      .from('members')
-      .select('tenant_id')
-      .eq('user_id', user.id)
-      .single();
+      .from("members")
+      .select("tenant_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
     if (existingMember) {
       return {
@@ -41,92 +40,19 @@ export async function setupWorkspace(data: WorkspaceSetupPayload): Promise<Works
       };
     }
 
-    // Create the tenant
-    const { data: tenant, error: tenantError } = await supabase
-      .from('tenants')
-      .insert({
-        name: data.workspaceName,
-      })
-      .select('id')
-      .single();
+    const result = await createTenantForUser(supabase, user.id, data.workspaceName);
 
-    if (tenantError || !tenant) {
-      console.error('Tenant creation error:', tenantError);
-      return {
-        success: false,
-        error: "Failed to create workspace. Please try again.",
-      };
-    }
-
-    // Create the member record (user as OWNER)
-    const { error: memberError } = await supabase
-      .from('members')
-      .insert({
-        user_id: user.id,
-        tenant_id: tenant.id,
-        role: 'OWNER',
-      });
-
-    if (memberError) {
-      console.error('Member creation error:', memberError);
-      // Try to clean up the tenant if member creation failed
-      await supabase.from('tenants').delete().eq('id', tenant.id);
-      
-      return {
-        success: false,
-        error: "Failed to set up workspace membership. Please try again.",
-      };
-    }
-
-    // Add sample customers to help users get started
-    const { error: customersError } = await supabase
-      .from('customers')
-      .insert([
-        {
-          tenant_id: tenant.id,
-          name: 'Alice Johnson',
-          phone: '+1 (555) 123-4567',
-          address: '123 Main St, New York, NY',
-          national_id: '123-45-6789',
-        },
-        {
-          tenant_id: tenant.id,
-          name: 'Bob Smith',
-          phone: '+1 (555) 987-6543',
-          address: '456 Oak Ave, Los Angeles, CA',
-          national_id: '987-65-4321',
-        },
-        {
-          tenant_id: tenant.id,
-          name: 'Carol Davis',
-          phone: '+1 (555) 456-7890',
-          address: '789 Pine St, Chicago, IL',
-          national_id: '456-78-9012',
-        },
-        {
-          tenant_id: tenant.id,
-          name: 'David Wilson',
-          phone: '+1 (555) 321-0987',
-          address: '321 Elm St, Houston, TX',
-          national_id: '321-09-8765',
-        },
-      ]);
-
-    if (customersError) {
-      console.error('Sample customers creation error:', customersError);
-      // Don't fail the whole process for sample data
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
 
     return {
       success: true,
       message: "Workspace created successfully! Welcome to your dashboard.",
-      tenantId: tenant.id,
+      tenantId: result.tenantId,
     };
   } catch (error) {
-    console.error('Unexpected error during workspace setup:', error);
-    return {
-      success: false,
-      error: "An unexpected error occurred. Please try again.",
-    };
+    console.error("Unexpected error during workspace setup:", error);
+    return { success: false, error: "An unexpected error occurred. Please try again." };
   }
 }
