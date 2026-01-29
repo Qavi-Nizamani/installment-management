@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,85 +11,125 @@ import {
   TrendingDown,
   Calendar,
 } from "lucide-react";
-// import { useEffect, useState } from "react";
 import { getDashboardCardsData } from "@/services/dashboard/dashboard.analytics";
-import { DashboardCardsData } from "@/services/dashboard/dashboard.types";
+import type { DashboardCardsData } from "@/services/dashboard/dashboard.types";
 
+function buildCards(stats: DashboardCardsData) {
+  const fmt = (n: number) => n.toLocaleString();
+  const fmtCurrency = (n: number) => "₨." + fmt(n);
+  const changeType = (n: number): "positive" | "negative" =>
+    n > 0 ? "positive" : "negative";
 
-
-export async function StatsCards() {
-  // const [stats, setStats] = useState<DashboardCardsData | null>(null);
-  // useEffect(() => {
-  //     const fetchDashboardCardsData = async () => {
-  //       const response = await getDashboardCardsData();
-  //       if (response.success) {
-  //         setStats(response.data);
-  //       } else {
-  //         console.error(response.error);
-  //       }
-  //     };
-  //   fetchDashboardCardsData();
-  // }, []);
-
-  let stats: DashboardCardsData | null = null;
-  const response = await getDashboardCardsData();
-  if (response.success) {
-    stats = response.data || null;
-    console.log("stats", stats)
-  } else {
-    console.error(response.error);
-  }
-
-  const cards = [
+  return [
     {
       name: "Total Revenue",
-      value: "₨." + stats?.totalRevenue.toLocaleString() || 0,
-      change: "₨." + stats?.totalRevenueChange.toLocaleString() || 0,
-      changeType: stats?.totalRevenueChange && stats?.totalRevenueChange > 0 ? "positive" as const : "negative" as const,
+      value: fmtCurrency(stats.totalRevenue),
+      change: fmtCurrency(stats.totalRevenueChange),
+      changeType: changeType(stats.totalRevenueChange),
       icon: DollarSign,
       description: "from last month",
     },
     {
       name: "Active Customers",
-      value: stats?.activeCustomers.toLocaleString() || 0,
-      change: stats?.activeCustomersChange || 0,
-      changeType: stats?.activeCustomersChange && stats?.activeCustomersChange > 0 ? "positive" as const : "negative" as const,
+      value: fmt(stats.activeCustomers),
+      change: String(stats.activeCustomersChange),
+      changeType: changeType(stats.activeCustomersChange),
       icon: Users,
       description: "from last month",
     },
     {
       name: "Active Plans",
-      value: stats?.activePlans || 0,
-      change: stats?.activePlansChange || 0,
-      changeType: stats?.activePlansChange && stats?.activePlansChange > 0 ? "positive" as const : "negative" as const,
+      value: String(stats.activePlans),
+      change: String(stats.activePlansChange),
+      changeType: changeType(stats.activePlansChange),
       icon: CreditCard,
       description: "from last month",
     },
     {
       name: "Pending Payments",
-      value: "₨." + stats?.pendingPayments || 0,
-      change: "₨." + stats?.pendingPaymentsChange || 0,
-      changeType: stats?.pendingPaymentsChange && stats?.pendingPaymentsChange > 0 ? "positive" as const : "negative" as const,
+      value: fmtCurrency(stats.pendingPayments),
+      change: fmtCurrency(stats.pendingPaymentsChange),
+      changeType: changeType(stats.pendingPaymentsChange),
       icon: Calendar,
       description: "from last month",
     },
     {
       name: "Monthly Profit",
-      value: "₨." + stats?.monthlyProfit || 0,
-      change: "₨." + stats?.monthlyProfitChange || 0,
-      changeType: stats?.monthlyProfitChange && stats?.monthlyProfitChange > 0 ? "positive" as const : "negative" as const,
+      value: fmtCurrency(stats.monthlyProfit),
+      change: fmtCurrency(stats.monthlyProfitChange),
+      changeType: changeType(stats.monthlyProfitChange),
       icon: TrendingUp,
       description: "from last month",
     },
     {
       name: "Overdue Amount",
-      value: "₨." + stats?.overdueAmount || 0,
-      change: "₨." + stats?.overdueAmountChange || 0,
-      changeType: stats?.overdueAmountChange && stats?.overdueAmountChange > 0 ? "positive" as const : "negative" as const,
+      value: fmtCurrency(stats.overdueAmount),
+      change: fmtCurrency(stats.overdueAmountChange),
+      changeType: changeType(stats.overdueAmountChange),
       icon: TrendingDown,
       description: "from last month",
     },
   ];
+}
+
+export function StatsCards() {
+  const [stats, setStats] = useState<DashboardCardsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+      const response = await getDashboardCardsData();
+      if (response.success && response.data) {
+        setStats(response.data);
+      } else {
+        setError(response.error ?? "Failed to load dashboard data.");
+      }
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i} className="relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 w-32 bg-gray-200 animate-pulse rounded mb-2" />
+              <div className="flex items-center space-x-2 mt-2">
+                <div className="h-5 w-16 bg-gray-200 animate-pulse rounded" />
+                <div className="h-4 w-20 bg-gray-200 animate-pulse rounded" />
+              </div>
+            </CardContent>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+        <p className="font-medium">Could not load dashboard stats</p>
+        <p className="text-sm mt-1">{error}</p>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
+
+  const cards = buildCards(stats);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {cards.map((stat) => {
@@ -114,12 +157,13 @@ export async function StatsCards() {
               </div>
             </CardContent>
             <div
-              className={`absolute bottom-0 left-0 right-0 h-1 ${stat.changeType === "positive" ? "bg-green-500" : "bg-red-500"
-                }`}
+              className={`absolute bottom-0 left-0 right-0 h-1 ${
+                stat.changeType === "positive" ? "bg-green-500" : "bg-red-500"
+              }`}
             />
           </Card>
         );
       })}
     </div>
   );
-} 
+}
