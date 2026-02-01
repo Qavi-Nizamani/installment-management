@@ -57,7 +57,7 @@ export function AvailableFundsCard({ showLink = false, className, refreshTrigger
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Capital Balance + Retained Earnings − Capital Deployed
+          Capital Balance − Capital Deployed (principal only)
           {showLink && (
             <>
               {" · "}

@@ -43,7 +43,7 @@ export default function CapitalStatsCards({
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Capital Balance + Retained Earnings − Capital Deployed
+            Capital Balance − Capital Deployed (principal only)
           </p>
         </CardContent>
       </Card>

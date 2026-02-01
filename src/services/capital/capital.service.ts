@@ -26,11 +26,9 @@ export interface CapitalStats {
   totalAdjustment: number;
   /** Current Balance = Investment - Withdrawal + Adjustment */
   balance: number;
-  /** Retained Earnings = total collected from installment payments (auto-calculated) */
-  retainedEarnings: number;
-  /** Capital Deployed = outstanding receivables (amount due - amount paid across installments) */
+  /** Capital Deployed = principal outstanding only (finance amount, excludes profit) */
   capitalDeployed: number;
-  /** Available Funds = Capital Balance + Retained Earnings - Capital Deployed */
+  /** Available Funds = Capital Balance - Capital Deployed (rolling financed amount, profit excluded) */
   availableFunds: number;
 }
 
@@ -128,28 +126,44 @@ export async function createCapitalEntry(
 }
 
 /**
- * Get installment-based metrics (retained earnings, capital deployed)
+ * Get capital deployed = principal outstanding only (excludes profit).
+ * Each installment's principal portion = finance_amount / total_months.
+ * For unpaid installments, that principal is still deployed.
  */
-async function getInstallmentMetrics(
-  tenantId: string
-): Promise<{ retainedEarnings: number; capitalDeployed: number }> {
+async function getCapitalDeployed(tenantId: string): Promise<number> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("installments")
-    .select("amount_due, amount_paid")
+    .select(
+      `
+      amount_due,
+      amount_paid,
+      installment_plan:installment_plans!inner (
+        finance_amount,
+        total_months
+      )
+    `
+    )
     .eq("tenant_id", tenantId);
 
-  if (error) return { retainedEarnings: 0, capitalDeployed: 0 };
+  if (error) return 0;
 
-  let retainedEarnings = 0;
   let capitalDeployed = 0;
   for (const row of data || []) {
-    const due = Number(row.amount_due || 0);
     const paid = Number(row.amount_paid || 0);
-    retainedEarnings += paid;
-    capitalDeployed += Math.max(0, due - paid);
+    const due = Number(row.amount_due || 0);
+    const planRef = row.installment_plan;
+    const plan = Array.isArray(planRef) ? planRef[0] : planRef;
+    if (!plan || !plan.total_months || plan.total_months <= 0) continue;
+
+    // If installment is fully paid, principal is recovered
+    if (paid >= due) continue;
+
+    // Principal portion per installment = finance_amount / total_months
+    const principalPortion = Number(plan.finance_amount || 0) / plan.total_months;
+    capitalDeployed += principalPortion;
   }
-  return { retainedEarnings, capitalDeployed };
+  return capitalDeployed;
 }
 
 /**
@@ -158,9 +172,9 @@ async function getInstallmentMetrics(
 export async function getCapitalStats(): Promise<ServiceResponse<CapitalStats>> {
   try {
     const context = await requireTenantAccess();
-    const [response, { retainedEarnings, capitalDeployed }] = await Promise.all([
+    const [response, capitalDeployed] = await Promise.all([
       getCapitalEntries(),
-      getInstallmentMetrics(context.tenantId),
+      getCapitalDeployed(context.tenantId),
     ]);
 
     if (!response.success || !response.data) {
@@ -176,7 +190,6 @@ export async function getCapitalStats(): Promise<ServiceResponse<CapitalStats>> 
       totalWithdrawal: 0,
       totalAdjustment: 0,
       balance: 0,
-      retainedEarnings,
       capitalDeployed,
       availableFunds: 0,
     };
@@ -197,8 +210,8 @@ export async function getCapitalStats(): Promise<ServiceResponse<CapitalStats>> 
 
     stats.balance =
       stats.totalInvestment - stats.totalWithdrawal + stats.totalAdjustment;
-    stats.availableFunds =
-      stats.balance + stats.retainedEarnings - stats.capitalDeployed;
+    // Available Funds = Capital Balance - Capital Deployed (principal only, profit excluded)
+    stats.availableFunds = stats.balance - stats.capitalDeployed;
 
     return {
       success: true,
