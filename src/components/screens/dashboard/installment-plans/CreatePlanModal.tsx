@@ -23,6 +23,7 @@ import {
 
 import { createInstallmentPlan } from '@/services/installment-plans/installmentPlans.service';
 import { getCustomers, type Customer } from '@/services/customers/customers.service';
+import { getCapitalStats } from '@/services/capital/capital.service';
 import type { CreateInstallmentPlanPayload } from '@/types/installment-plans';
 
 interface CreatePlanModalProps {
@@ -59,13 +60,21 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
   });
 
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [availableFunds, setAvailableFunds] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load customers when modal opens
+  // Load customers and available funds when modal opens
   useEffect(() => {
     if (isOpen) {
       loadCustomers();
+      getCapitalStats().then((response) => {
+        if (response.success && response.data) {
+          setAvailableFunds(response.data.availableFunds);
+        } else {
+          setAvailableFunds(null);
+        }
+      });
     }
   }, [isOpen]);
 
@@ -140,9 +149,18 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
     }
     if (!formData.start_date) newErrors.start_date = "Start date is required";
 
+    // Ensure we have enough available funds to finance this amount
+    const financeAmount = parseFloat(formData.finance_amount) || 0;
+    if (financeAmount > 0 && availableFunds !== null && financeAmount > availableFunds) {
+      newErrors.finance_amount = `Insufficient funds. Finance amount ($${financeAmount.toLocaleString()}) exceeds available funds ($${availableFunds.toLocaleString()}).`;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  const financeAmount = parseFloat(formData.finance_amount) || 0;
+  const hasInsufficientFunds = financeAmount > 0 && availableFunds !== null && financeAmount > availableFunds;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,10 +340,16 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
                 step="0.01"
                 value={formData.finance_amount}
                 readOnly
-                className="bg-gray-50"
+                className={`bg-gray-50 ${hasInsufficientFunds ? "border-red-500" : ""}`}
                 placeholder="Calculated automatically"
               />
-              <p className="text-xs text-gray-500">Auto-calculated: Total Price - Upfront Payment</p>
+              <p className="text-xs text-gray-500">
+                Auto-calculated: Total Price - Upfront Payment
+                {availableFunds !== null && (
+                  <> · Available: <span className={hasInsufficientFunds ? "font-medium text-red-600" : "font-medium"}>${availableFunds.toLocaleString()}</span></>
+                )}
+              </p>
+              {errors.finance_amount && <p className="text-red-500 text-sm">{errors.finance_amount}</p>}
             </div>
 
             <div className="space-y-2">
