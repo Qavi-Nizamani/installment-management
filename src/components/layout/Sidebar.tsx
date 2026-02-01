@@ -44,6 +44,11 @@ const navigation = [
     href: "/dashboard/installments",
     icon: Calendar,
   },
+  {
+    name: "Capital",
+    href: "/finance/capital",
+    icon: PiggyBank,
+  },
   // {
   //   name: "Revenue",
   //   href: "/dashboard/revenue",
