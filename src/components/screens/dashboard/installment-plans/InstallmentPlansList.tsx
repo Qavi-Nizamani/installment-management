@@ -262,7 +262,7 @@ export function InstallmentPlansList({
                       </div>
                     </TableCell>
 
-                    <TableCell>
+                    {/* <TableCell>
                       <div className="font-medium">
                         {plan.business_model === 'PRODUCT_OWNER' ? 'Product Owner' : 'Financer Only'}
                       </div>
@@ -272,7 +272,7 @@ export function InstallmentPlansList({
                           : 'Profit only'
                         }
                       </div>
-                    </TableCell>
+                    </TableCell> */}
                     
                     <TableCell>
                       <div className="font-medium">
@@ -312,14 +312,14 @@ export function InstallmentPlansList({
                       </div>
                     </TableCell>
                     
-                    {/* <TableCell>
+                    <TableCell>
                       <div className="font-medium text-green-600">
                         ${(plan.my_revenue || 0).toFixed(2)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {plan.business_model === 'PRODUCT_OWNER' ? 'total earned' : 'profit earned'}
                       </div>
-                    </TableCell> */}
+                    </TableCell>
                     
                     <TableCell>
                       <Badge variant={statusConfig.variant} className="flex items-center space-x-1">
