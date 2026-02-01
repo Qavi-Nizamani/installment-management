@@ -24,12 +24,14 @@ export interface CapitalStats {
   totalInvestment: number;
   totalWithdrawal: number;
   totalAdjustment: number;
-  /** Owner Capital = Investment + Adjustment. Withdrawals are deducted from Retained Earnings first, then Owner Capital. */
-  ownerCapital: number;
-  /** Retained Earnings = Total collected from installments - Withdrawals (capped at 0). Withdrawals deduct from this first. */
+  /** Current Balance = Investment - Withdrawal + Adjustment */
+  balance: number;
+  /** Retained Earnings = total collected from installment payments (auto-calculated) */
   retainedEarnings: number;
-  /** Total earnings collected from installment payments (before withdrawals) */
-  totalEarningsCollected: number;
+  /** Capital Deployed = outstanding receivables (amount due - amount paid across installments) */
+  capitalDeployed: number;
+  /** Available Funds = Capital Balance + Retained Earnings - Capital Deployed */
+  availableFunds: number;
 }
 
 export interface ServiceResponse<T> {
@@ -126,45 +128,57 @@ export async function createCapitalEntry(
 }
 
 /**
- * Get total amount paid from installments (earnings collected)
+ * Get installment-based metrics (retained earnings, capital deployed)
  */
-async function getTotalEarningsCollected(tenantId: string): Promise<number> {
+async function getInstallmentMetrics(
+  tenantId: string
+): Promise<{ retainedEarnings: number; capitalDeployed: number }> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("installments")
-    .select("amount_paid")
+    .select("amount_due, amount_paid")
     .eq("tenant_id", tenantId);
 
-  if (error) return 0;
-  return (data || []).reduce((sum, row) => sum + Number(row.amount_paid || 0), 0);
+  if (error) return { retainedEarnings: 0, capitalDeployed: 0 };
+
+  let retainedEarnings = 0;
+  let capitalDeployed = 0;
+  for (const row of data || []) {
+    const due = Number(row.amount_due || 0);
+    const paid = Number(row.amount_paid || 0);
+    retainedEarnings += paid;
+    capitalDeployed += Math.max(0, due - paid);
+  }
+  return { retainedEarnings, capitalDeployed };
 }
 
 /**
- * Get capital statistics (totals, owner capital, retained earnings)
+ * Get capital statistics (totals, balance, available funds)
  */
 export async function getCapitalStats(): Promise<ServiceResponse<CapitalStats>> {
   try {
     const context = await requireTenantAccess();
-    const [entriesResponse, totalEarningsCollected] = await Promise.all([
+    const [response, { retainedEarnings, capitalDeployed }] = await Promise.all([
       getCapitalEntries(),
-      getTotalEarningsCollected(context.tenantId),
+      getInstallmentMetrics(context.tenantId),
     ]);
 
-    if (!entriesResponse.success || !entriesResponse.data) {
+    if (!response.success || !response.data) {
       return {
         success: false,
-        error: entriesResponse.error || "Failed to fetch capital stats",
+        error: response.error || "Failed to fetch capital stats",
       };
     }
 
-    const entries = entriesResponse.data;
+    const entries = response.data;
     const stats: CapitalStats = {
       totalInvestment: 0,
       totalWithdrawal: 0,
       totalAdjustment: 0,
-      ownerCapital: 0,
-      retainedEarnings: 0,
-      totalEarningsCollected,
+      balance: 0,
+      retainedEarnings,
+      capitalDeployed,
+      availableFunds: 0,
     };
 
     for (const entry of entries) {
@@ -181,16 +195,10 @@ export async function getCapitalStats(): Promise<ServiceResponse<CapitalStats>> 
       }
     }
 
-    // Owner Capital = Investment + Adjustment. Withdrawals do NOT reduce it directly —
-    // they are deducted from Retained Earnings first, then Owner Capital if insufficient.
-    stats.ownerCapital = stats.totalInvestment + stats.totalAdjustment;
-
-    // Retained Earnings = Earnings collected - Withdrawals (capped at 0).
-    // Withdrawals deduct from earnings first; excess reduces Owner Capital.
-    stats.retainedEarnings = Math.max(
-      0,
-      stats.totalEarningsCollected - stats.totalWithdrawal
-    );
+    stats.balance =
+      stats.totalInvestment - stats.totalWithdrawal + stats.totalAdjustment;
+    stats.availableFunds =
+      stats.balance + stats.retainedEarnings - stats.capitalDeployed;
 
     return {
       success: true,

@@ -65,9 +65,10 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
             totalInvestment: 0,
             totalWithdrawal: 0,
             totalAdjustment: 0,
-            ownerCapital: 0,
+            balance: 0,
             retainedEarnings: 0,
-            totalEarningsCollected: 0,
+            capitalDeployed: 0,
+            availableFunds: 0,
           },
         });
       }
@@ -77,9 +78,10 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
           totalInvestment: 0,
           totalWithdrawal: 0,
           totalAdjustment: 0,
-          ownerCapital: 0,
+          balance: 0,
           retainedEarnings: 0,
-          totalEarningsCollected: 0,
+          capitalDeployed: 0,
+          availableFunds: 0,
         },
       });
     }
