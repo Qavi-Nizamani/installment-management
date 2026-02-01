@@ -16,6 +16,7 @@ export function InstallmentPlansScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [fundsRefreshKey, setFundsRefreshKey] = useState(0);
 
   const loadPlans = async () => {
     try {
@@ -66,17 +67,22 @@ export function InstallmentPlansScreen() {
     return () => clearTimeout(timeoutId);
   };
 
+  const refreshFunds = () => setFundsRefreshKey((k) => k + 1);
+
   const handlePlanCreated = () => {
-    loadPlans(); // Refresh the list
+    loadPlans();
+    refreshFunds();
     setIsCreateModalOpen(false);
   };
 
   const handlePlanUpdated = () => {
-    loadPlans(); // Refresh the list
+    loadPlans();
+    refreshFunds();
   };
 
   const handlePlanDeleted = () => {
-    loadPlans(); // Refresh the list
+    loadPlans();
+    refreshFunds();
   };
 
   useEffect(() => {
@@ -132,7 +138,7 @@ export function InstallmentPlansScreen() {
       </div>
 
       {/* Stats Cards */}
-      <InstallmentPlansStats plans={plans} />
+      <InstallmentPlansStats plans={plans} fundsRefreshTrigger={fundsRefreshKey} />
 
       {/* Search and Filters */}
       <div className="flex items-center space-x-2">

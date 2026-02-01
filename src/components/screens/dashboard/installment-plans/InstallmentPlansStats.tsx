@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, DollarSign, TrendingUp, FileText } from "lucide-react";
 import type { InstallmentPlan } from "@/types/installment-plans";
+import { AvailableFundsCard } from "../capital/AvailableFundsCard";
 
 interface InstallmentPlansStatsProps {
   plans: InstallmentPlan[];
+  /** Refetch available funds when this changes */
+  fundsRefreshTrigger?: number;
 }
 
-export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
+export function InstallmentPlansStats({ plans, fundsRefreshTrigger }: InstallmentPlansStatsProps) {
   // Calculate stats from plans data
   const totalPlans = plans.length;
   const activePlans = plans.filter(p => p.status === 'ACTIVE').length;
@@ -31,7 +34,8 @@ export function InstallmentPlansStats({ plans }: InstallmentPlansStatsProps) {
   }).length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <AvailableFundsCard showLink refreshTrigger={fundsRefreshTrigger} />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Plans</CardTitle>
