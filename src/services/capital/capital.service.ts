@@ -162,7 +162,8 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
     // Principal portion per installment = finance_amount / total_months
     const principalPortion =
       Number(plan.finance_amount || 0) / plan.total_months;
-    capitalDeployed += paid < principalPortion ? paid : principalPortion; // If installment is fully paid, principal is recovered
+    capitalDeployed +=
+      paid < principalPortion ? principalPortion - paid : 0; // If installment is fully paid, principal is recovered
   }
 
   return capitalDeployed;
