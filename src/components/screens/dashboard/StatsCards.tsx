@@ -14,6 +14,12 @@ import {
 import { getDashboardCardsData } from "@/services/dashboard/dashboard.analytics";
 import type { DashboardCardsData } from "@/services/dashboard/dashboard.types";
 
+/** Format change value: backend sends percentage (e.g. 100, -100), display as "+100%", "-100%", "0%" */
+function fmtPercent(percent: number): string {
+  const sign = percent > 0 ? "+" : "";
+  return `${sign}${Math.round(percent)}%`;
+}
+
 function buildCards(stats: DashboardCardsData) {
   const fmt = (n: number) => n.toLocaleString();
   const fmtCurrency = (n: number) => "₨." + fmt(n);
@@ -24,7 +30,7 @@ function buildCards(stats: DashboardCardsData) {
     {
       name: "Total Revenue",
       value: fmtCurrency(stats.totalRevenue),
-      change: fmtCurrency(stats.totalRevenueChange),
+      change: fmtPercent(stats.totalRevenueChange),
       changeType: changeType(stats.totalRevenueChange),
       icon: DollarSign,
       description: "from last month",
@@ -32,7 +38,7 @@ function buildCards(stats: DashboardCardsData) {
     {
       name: "Active Customers",
       value: fmt(stats.activeCustomers),
-      change: String(stats.activeCustomersChange),
+      change: fmtPercent(stats.activeCustomersChange),
       changeType: changeType(stats.activeCustomersChange),
       icon: Users,
       description: "from last month",
@@ -40,7 +46,7 @@ function buildCards(stats: DashboardCardsData) {
     {
       name: "Active Plans",
       value: String(stats.activePlans),
-      change: String(stats.activePlansChange),
+      change: fmtPercent(stats.activePlansChange),
       changeType: changeType(stats.activePlansChange),
       icon: CreditCard,
       description: "from last month",
@@ -48,7 +54,7 @@ function buildCards(stats: DashboardCardsData) {
     {
       name: "Pending Payments",
       value: fmtCurrency(stats.pendingPayments),
-      change: fmtCurrency(stats.pendingPaymentsChange),
+      change: fmtPercent(stats.pendingPaymentsChange),
       changeType: changeType(stats.pendingPaymentsChange),
       icon: Calendar,
       description: "from last month",
@@ -56,7 +62,7 @@ function buildCards(stats: DashboardCardsData) {
     {
       name: "Monthly Profit",
       value: fmtCurrency(stats.monthlyProfit),
-      change: fmtCurrency(stats.monthlyProfitChange),
+      change: fmtPercent(stats.monthlyProfitChange),
       changeType: changeType(stats.monthlyProfitChange),
       icon: TrendingUp,
       description: "from last month",
@@ -64,7 +70,7 @@ function buildCards(stats: DashboardCardsData) {
     {
       name: "Overdue Amount",
       value: fmtCurrency(stats.overdueAmount),
-      change: fmtCurrency(stats.overdueAmountChange),
+      change: fmtPercent(stats.overdueAmountChange),
       changeType: changeType(stats.overdueAmountChange),
       icon: TrendingDown,
       description: "from last month",
