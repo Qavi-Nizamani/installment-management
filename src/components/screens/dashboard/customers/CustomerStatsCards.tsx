@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, Loader2 } from "lucide-react";
 import { Customer, CustomerStats } from "@/services/customers/customers.service";
+import { fmtCurrency } from "@/components/utils/format";
 
 interface CustomerStatsCardsProps {
   customers: Customer[];
@@ -33,7 +34,7 @@ export default function CustomerStatsCards({ customers, stats, isLoading }: Cust
           </p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
@@ -61,7 +62,7 @@ export default function CustomerStatsCards({ customers, stats, isLoading }: Cust
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              `$${(stats?.totalRevenue || 0).toLocaleString()}`
+              fmtCurrency(stats?.totalRevenue || 0)
             )}
           </div>
           <p className="text-xs text-muted-foreground">From installment plans</p>
