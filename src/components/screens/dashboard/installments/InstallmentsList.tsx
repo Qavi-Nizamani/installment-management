@@ -43,6 +43,7 @@ import { useState } from "react";
 import { markAsPaid, markAsPending } from "@/services/installments/installments.service";
 import type { Installment, InstallmentStatus } from "@/types/installments/installments.types";
 import { INSTALLMENT_STATUS_CONFIGS } from "@/types/installments/installments.types";
+import { fmtCurrency } from "@/components/utils/format";
 
 interface InstallmentsListProps {
   installments: Installment[];
@@ -125,15 +126,15 @@ export function InstallmentsList({
       const amountDue = selectedInstallment.amount_due;
       let noteDetail = '';
       if (parsedAmount < amountDue) {
-        noteDetail = ` (underpayment - $${(amountDue - parsedAmount).toLocaleString()} balance moved to next installment)`;
+        noteDetail = ` (underpayment - ${fmtCurrency(amountDue - parsedAmount)} balance moved to next installment)`;
       } else if (parsedAmount > amountDue) {
-        noteDetail = ` (overpayment - $${(parsedAmount - amountDue).toLocaleString()} excess applied to last installment)`;
+        noteDetail = ` (overpayment - ${fmtCurrency(parsedAmount - amountDue)} excess applied to last installment)`;
       }
 
       const response = await markAsPaid(selectedInstallment.id, {
         amount_paid: parsedAmount,
         paid_on: new Date().toISOString().split('T')[0],
-        notes: `Payment of $${parsedAmount.toLocaleString()} recorded from installments page${noteDetail}`
+        notes: `Payment of ${fmtCurrency(parsedAmount)} recorded from installments page${noteDetail}`
       });
       
       if (response.success) {
@@ -313,13 +314,13 @@ export function InstallmentsList({
                     
                     <TableCell>
                       <div className="font-medium">
-                        ${installment.amount_due.toLocaleString()}
+                        {fmtCurrency(installment.amount_due)}
                       </div>
                     </TableCell>
                     
                     <TableCell>
                       <div className="font-medium text-green-600">
-                        ${installment.amount_paid.toLocaleString()}
+                        {fmtCurrency(installment.amount_paid)}
                       </div>
                     </TableCell>
 
@@ -327,7 +328,7 @@ export function InstallmentsList({
                       <div className={`font-medium ${
                         (installment.remaining_due || 0) > 0 ? 'text-orange-600' : 'text-green-600'
                       }`}>
-                        ${(installment.remaining_due || 0).toLocaleString()}
+                        {fmtCurrency(installment.remaining_due || 0)}
                       </div>
                     </TableCell>
                     
@@ -402,13 +403,13 @@ export function InstallmentsList({
                 <div className="space-y-2 text-sm">
                   <div><strong>Customer:</strong> {selectedInstallment?.customer?.name}</div>
                   <div><strong>Plan:</strong> {selectedInstallment?.plan_title}</div>
-                  <div><strong>Amount Due:</strong> ${selectedInstallment?.amount_due.toLocaleString()}</div>
+                  <div><strong>Amount Due:</strong> {fmtCurrency(selectedInstallment?.amount_due ?? 0)}</div>
                   <div><strong>Due Date:</strong> {selectedInstallment?.due_date && formatDate(selectedInstallment.due_date)}</div>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="amount-paid" className="text-sm font-medium text-gray-700">
-                    Amount Paid ($)
+                    Amount Paid
                   </label>
                   <Input
                     id="amount-paid"
@@ -428,11 +429,11 @@ export function InstallmentsList({
                       </p>
                       {parseFloat(amountPaid) > selectedInstallment.amount_due ? (
                         <p className="text-blue-600">
-                          📈 <strong>Overpayment:</strong> ${(parseFloat(amountPaid) - selectedInstallment.amount_due).toLocaleString()} excess will reduce the last unpaid installment in this plan
+                          📈 <strong>Overpayment:</strong> {fmtCurrency(parseFloat(amountPaid) - selectedInstallment.amount_due)} excess will reduce the last unpaid installment in this plan
                         </p>
                       ) : parseFloat(amountPaid) < selectedInstallment.amount_due ? (
                         <p className="text-amber-600">
-                          📋 <strong>Underpayment:</strong> ${(selectedInstallment.amount_due - parseFloat(amountPaid)).toLocaleString()} balance will be moved to the next unpaid installment. This installment will show $0 remaining due.
+                          📋 <strong>Underpayment:</strong> {fmtCurrency(selectedInstallment.amount_due - parseFloat(amountPaid))} balance will be moved to the next unpaid installment. This installment will show Rs 0 remaining due.
                         </p>
                       ) : (
                         <p className="text-green-600">
