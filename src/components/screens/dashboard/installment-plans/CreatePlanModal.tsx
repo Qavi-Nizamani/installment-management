@@ -198,7 +198,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
           monthly_percentage: "",
           total_months: "",
           start_date: "",
-          business_model: 'PRODUCT_OWNER',
+          business_model: 'FINANCER_ONLY',
           notes: "",
         });
         setErrors({});

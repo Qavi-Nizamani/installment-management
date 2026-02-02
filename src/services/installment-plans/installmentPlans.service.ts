@@ -148,7 +148,7 @@ export async function createInstallmentPlan(
         monthly_percentage: payload.monthly_percentage,
         total_months: payload.total_months,
         start_date: payload.start_date,
-        business_model: payload.business_model,
+        business_model: 'FINANCER_ONLY',
         notes: payload.notes,
       })
       .select()
@@ -448,16 +448,23 @@ async function generateInstallmentRecords(planId: string, plan: Pick<Installment
     
     const installments = [];
     
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     for (let i = 1; i <= plan.total_months; i++) {
       const dueDate = new Date(startDate);
       dueDate.setMonth(dueDate.getMonth() + i);
-      
+      const dueDateStr = dueDate.toISOString().split('T')[0];
+      const dueDateOnly = new Date(dueDateStr);
+      dueDateOnly.setHours(0, 0, 0, 0);
+      const status = dueDateOnly < today ? 'OVERDUE' : 'PENDING';
+
       installments.push({
         installment_plan_id: planId,
         tenant_id: plan.tenant_id,
-        due_date: dueDate.toISOString().split('T')[0],
+        due_date: dueDateStr,
         amount_due: monthlyAmount,
-        status: 'PENDING',
+        status,
       });
     }
 
