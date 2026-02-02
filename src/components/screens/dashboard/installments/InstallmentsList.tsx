@@ -126,9 +126,9 @@ export function InstallmentsList({
       const amountDue = selectedInstallment.amount_due;
       let noteDetail = '';
       if (parsedAmount < amountDue) {
-        noteDetail = ` (underpayment - ${fmtCurrency(amountDue - parsedAmount)} balance moved to next installment)`;
+        noteDetail = ` (partial payment - ${fmtCurrency(amountDue - parsedAmount)} remaining on this installment)`;
       } else if (parsedAmount > amountDue) {
-        noteDetail = ` (overpayment - ${fmtCurrency(parsedAmount - amountDue)} excess applied to last installment)`;
+        noteDetail = ` (overpayment - ${fmtCurrency(parsedAmount - amountDue)})`;
       }
 
       const response = await markAsPaid(selectedInstallment.id, {
@@ -424,16 +424,18 @@ export function InstallmentsList({
                   />
                   {selectedInstallment && parseFloat(amountPaid) > 0 && (
                     <div className="text-xs space-y-1">
-                      <p className="text-green-600">
-                        ✅ This installment will be marked as <strong>PAID</strong>
-                      </p>
+                      {parseFloat(amountPaid) >= selectedInstallment.amount_due ? (
+                        <p className="text-green-600">
+                          ✅ This installment will be marked as <strong>PAID</strong>
+                        </p>
+                      ) : null}
                       {parseFloat(amountPaid) > selectedInstallment.amount_due ? (
                         <p className="text-blue-600">
-                          📈 <strong>Overpayment:</strong> {fmtCurrency(parseFloat(amountPaid) - selectedInstallment.amount_due)} excess will reduce the last unpaid installment in this plan
+                          📈 <strong>Overpayment:</strong> {fmtCurrency(parseFloat(amountPaid) - selectedInstallment.amount_due)}
                         </p>
                       ) : parseFloat(amountPaid) < selectedInstallment.amount_due ? (
                         <p className="text-amber-600">
-                          📋 <strong>Underpayment:</strong> {fmtCurrency(selectedInstallment.amount_due - parseFloat(amountPaid))} balance will be moved to the next unpaid installment. This installment will show Rs 0 remaining due.
+                          📋 <strong>Partial payment:</strong> {fmtCurrency(selectedInstallment.amount_due - parseFloat(amountPaid))} will remain due on this installment. Status stays overdue until fully paid.
                         </p>
                       ) : (
                         <p className="text-green-600">
