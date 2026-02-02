@@ -14,11 +14,11 @@ import {
   CreditCard,
   Calendar,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Settings,
-  UserCheck,
+  // TrendingUp,
+  // TrendingDown,
+  // BarChart3,
+  // Settings,
+  // UserCheck,
   PiggyBank,
   Menu,
 } from "lucide-react";
@@ -46,7 +46,7 @@ const navigation = [
   },
   {
     name: "Capital",
-    href: "/finance/capital",
+    href: "/dashboard/finance/capital",
     icon: PiggyBank,
   },
   // {
@@ -69,11 +69,11 @@ const navigation = [
   //   href: "/dashboard/financial",
   //   icon: PiggyBank,
   // },
-  {
-    name: "Members",
-    href: "/dashboard/settings/members",
-    icon: UserCheck,
-  },
+  // {
+  //   name: "Members",
+  //   href: "/dashboard/settings/members",
+  //   icon: UserCheck,
+  // },
   // {
   //   name: "Settings",
   //   href: "/dashboard/settings",
