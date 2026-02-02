@@ -8,19 +8,11 @@ import {
   Coins,
 } from "lucide-react";
 import { CapitalStats } from "@/services/capital/capital.service";
+import { fmtCurrency } from "@/components/utils/format";
 
 interface CapitalStatsCardsProps {
   stats: CapitalStats | null;
   isLoading: boolean;
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
 }
 
 export default function CapitalStatsCards({
@@ -39,7 +31,7 @@ export default function CapitalStatsCards({
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              formatCurrency(stats?.availableFunds ?? 0)
+              fmtCurrency(stats?.availableFunds ?? 0)
             )}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -58,7 +50,7 @@ export default function CapitalStatsCards({
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              formatCurrency(stats?.balance ?? 0)
+              fmtCurrency(stats?.balance ?? 0)
             )}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -77,7 +69,7 @@ export default function CapitalStatsCards({
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              formatCurrency(stats?.totalInvestment ?? 0)
+              fmtCurrency(stats?.totalInvestment ?? 0)
             )}
           </div>
           <p className="text-xs text-muted-foreground">Capital added</p>
@@ -94,7 +86,7 @@ export default function CapitalStatsCards({
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              formatCurrency(stats?.totalWithdrawal ?? 0)
+              fmtCurrency(stats?.totalWithdrawal ?? 0)
             )}
           </div>
           <p className="text-xs text-muted-foreground">Capital removed</p>
@@ -111,7 +103,7 @@ export default function CapitalStatsCards({
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              formatCurrency(stats?.totalAdjustment ?? 0)
+              fmtCurrency(stats?.totalAdjustment ?? 0)
             )}
           </div>
           <p className="text-xs text-muted-foreground">Corrections applied</p>

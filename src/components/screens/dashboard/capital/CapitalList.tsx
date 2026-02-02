@@ -11,30 +11,13 @@ import {
 } from "@/components/ui/table";
 import { PiggyBank, TrendingUp, TrendingDown, SlidersHorizontal } from "lucide-react";
 import { CapitalLedgerEntry, CapitalLedgerType } from "@/services/capital/capital.service";
+import { fmtCurrency, fmtDate } from "@/components/utils/format";
 
 interface CapitalListProps {
   entries: CapitalLedgerEntry[];
   isLoading: boolean;
 }
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function TypeBadge({ type }: { type: CapitalLedgerType }) {
   const config = {
@@ -132,7 +115,7 @@ export default function CapitalList({ entries, isLoading }: CapitalListProps) {
             {entries.map((entry) => (
               <TableRow key={entry.id}>
                 <TableCell className="text-muted-foreground">
-                  {formatDate(entry.created_at)}
+                  {fmtDate(entry.created_at)}
                 </TableCell>
                 <TableCell>
                   <TypeBadge type={entry.type} />
@@ -145,7 +128,7 @@ export default function CapitalList({ entries, isLoading }: CapitalListProps) {
                   }
                 >
                   {entry.type === "WITHDRAWAL" ? "-" : "+"}
-                  {formatCurrency(Number(entry.amount))}
+                  {fmtCurrency(Number(entry.amount))}
                 </TableCell>
                 <TableCell className="max-w-[200px] truncate text-muted-foreground">
                   {entry.notes || "—"}

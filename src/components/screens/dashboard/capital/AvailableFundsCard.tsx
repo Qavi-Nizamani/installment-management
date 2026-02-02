@@ -5,15 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coins, Loader2 } from "lucide-react";
 import { getCapitalStats } from "@/services/capital/capital.service";
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
+import { fmtCurrency } from "@/components/utils/format";
 
 interface AvailableFundsCardProps {
   /** Show link to Capital page. Default: false */
@@ -53,7 +45,7 @@ export function AvailableFundsCard({ showLink = false, className, refreshTrigger
           {isLoading ? (
             <Loader2 className="h-6 w-6 animate-spin" />
           ) : (
-            formatCurrency(availableFunds ?? 0)
+            fmtCurrency(availableFunds ?? 0)
           )}
         </div>
         <p className="text-xs text-muted-foreground">

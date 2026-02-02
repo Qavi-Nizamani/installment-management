@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, DollarSign, TrendingUp, FileText } from "lucide-react";
 import type { InstallmentPlan } from "@/types/installment-plans";
 import { AvailableFundsCard } from "../capital/AvailableFundsCard";
+import { fmtCurrency } from "@/components/utils/format";
 
 interface InstallmentPlansStatsProps {
   plans: InstallmentPlan[];
@@ -68,7 +69,7 @@ export function InstallmentPlansStats({ plans, fundsRefreshTrigger }: Installmen
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${totalFinanceAmount.toLocaleString()}</div>
+          <div className="text-2xl font-bold">{fmtCurrency(totalFinanceAmount)}</div>
           <p className="text-xs text-muted-foreground">
             Across all plans
           </p>
@@ -81,7 +82,7 @@ export function InstallmentPlansStats({ plans, fundsRefreshTrigger }: Installmen
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${totalMyRevenue.toLocaleString()}</div>
+          <div className="text-2xl font-bold">{fmtCurrency(totalMyRevenue)}</div>
           <p className="text-xs text-muted-foreground">
             {productOwnerPlans.length > 0 && financerOnlyPlans.length > 0 
               ? `${productOwnerPlans.length} owned, ${financerOnlyPlans.length} financed`

@@ -41,6 +41,7 @@ import {
 import { useState } from "react";
 import { deleteInstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
 import type { InstallmentPlan } from "@/types/installment-plans";
+import { fmtCurrency } from "@/components/utils/format";
 
 interface InstallmentPlansListProps {
   plans: InstallmentPlan[];
@@ -276,16 +277,16 @@ export function InstallmentPlansList({
                     
                     <TableCell>
                       <div className="font-medium">
-                        ${plan.total_price.toLocaleString()}
+                        {fmtCurrency(plan.total_price)}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        ${plan.upfront_paid.toLocaleString()} upfront
+                        {fmtCurrency(plan.upfront_paid)} upfront
                       </div>
                     </TableCell>
 
                     <TableCell>
                       <div className="font-medium text-blue-600">
-                        ${(plan.total_interest || 0).toLocaleString()}
+                        {fmtCurrency(plan.total_interest || 0)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         Trade profit
@@ -294,7 +295,7 @@ export function InstallmentPlansList({
                     
                     <TableCell>
                       <div className="font-medium">
-                        ${(plan.monthly_amount || 0).toFixed(2)}
+                        {fmtCurrency(plan.monthly_amount || 0)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {plan.total_months} months
@@ -314,7 +315,7 @@ export function InstallmentPlansList({
                     
                     <TableCell>
                       <div className="font-medium text-green-600">
-                        ${(plan.my_revenue || 0).toFixed(2)}
+                        {fmtCurrency(plan.my_revenue || 0)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {plan.business_model === 'PRODUCT_OWNER' ? 'total earned' : 'profit earned'}

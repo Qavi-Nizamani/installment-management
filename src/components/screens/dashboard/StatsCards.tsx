@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { getDashboardCardsData } from "@/services/dashboard/dashboard.analytics";
 import type { DashboardCardsData } from "@/services/dashboard/dashboard.types";
+import { fmtCurrency } from "@/components/utils/format";
 
 /** Format change value: backend sends percentage (e.g. 100, -100), display as "+100%", "-100%", "0%" */
 function fmtPercent(percent: number): string {
@@ -22,7 +23,6 @@ function fmtPercent(percent: number): string {
 
 function buildCards(stats: DashboardCardsData) {
   const fmt = (n: number) => n.toLocaleString();
-  const fmtCurrency = (n: number) => "₨." + fmt(n);
   const changeType = (n: number): "positive" | "negative" =>
     n > 0 ? "positive" : "negative";
 
