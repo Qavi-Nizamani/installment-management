@@ -80,7 +80,7 @@ export async function getCapitalEntries(): Promise<
  * Create a new capital ledger entry
  */
 export async function createCapitalEntry(
-  payload: CreateCapitalEntryPayload
+  payload: CreateCapitalEntryPayload,
 ): Promise<ServiceResponse<CapitalLedgerEntry>> {
   try {
     const context = await requireTenantAccess();
@@ -142,7 +142,7 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
         finance_amount,
         total_months
       )
-    `
+    `,
     )
     .eq("tenant_id", tenantId);
 
@@ -160,16 +160,20 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
     if (paid >= due) continue;
 
     // Principal portion per installment = finance_amount / total_months
-    const principalPortion = Number(plan.finance_amount || 0) / plan.total_months;
-    capitalDeployed += principalPortion;
+    const principalPortion =
+      Number(plan.finance_amount || 0) / plan.total_months;
+    capitalDeployed += paid < principalPortion ? paid : principalPortion; // If installment is fully paid, principal is recovered
   }
+
   return capitalDeployed;
 }
 
 /**
  * Get capital statistics (totals, balance, available funds)
  */
-export async function getCapitalStats(): Promise<ServiceResponse<CapitalStats>> {
+export async function getCapitalStats(): Promise<
+  ServiceResponse<CapitalStats>
+> {
   try {
     const context = await requireTenantAccess();
     const [response, capitalDeployed] = await Promise.all([
