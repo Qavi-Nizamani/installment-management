@@ -161,9 +161,9 @@ export async function getDashboardCardsData(): Promise<
         0
       );
 
-      // Calculate overdue amount
+      // Calculate overdue amount (amount still owed: amount_due - amount_paid)
       overdueAmount += overdueInstallments.reduce(
-        (sum, i) => sum + i.amount_due,
+        (sum, i) => sum + (i.amount_due - (i.amount_paid ?? 0)),
         0
       );
 
@@ -291,14 +291,14 @@ export async function getDashboardCardsData(): Promise<
         lastMonthPendingPayments += installment.amount_due;
       }
 
-      // Overdue installments at end of last month
+      // Overdue installments at end of last month (amount still owed: amount_due - amount_paid)
       if (
         (installment.status === "OVERDUE" ||
           (installment.status === "PENDING" && dueDate < lastMonthEndDate)) &&
         (!installment.paid_on ||
           new Date(installment.paid_on) > lastMonthEndDate)
       ) {
-        lastMonthOverdueAmount += installment.amount_due;
+        lastMonthOverdueAmount += installment.amount_due - (installment.amount_paid ?? 0);
       }
     });
 
