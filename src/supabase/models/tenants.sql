@@ -63,3 +63,29 @@ CREATE TRIGGER update_tenants_updated_at
     BEFORE UPDATE ON tenants
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column(); 
+
+
+    -- Authenticated users can create tenants
+    CREATE OR REPLACE FUNCTION create_tenant(p_name TEXT)
+    RETURNS tenants
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    AS $$
+    DECLARE
+    v_tenant tenants;
+    BEGIN
+    -- Require authentication
+    IF auth.uid() IS NULL THEN
+      RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    INSERT INTO tenants (name)
+    VALUES (p_name)
+    RETURNING * INTO v_tenant;
+
+    INSERT INTO members (user_id, tenant_id, role)
+    VALUES (auth.uid(), v_tenant.id, 'OWNER');
+
+    RETURN v_tenant;
+    END;
+    $$;

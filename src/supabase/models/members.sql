@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS members (
 -- Create indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_members_user_id ON members(user_id);
 CREATE INDEX IF NOT EXISTS idx_members_tenant_id ON members(tenant_id);
+CREATE INDEX idx_members_user_tenant_role ON members (user_id, tenant_id, role);
 
 -- Enable Row Level Security
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
@@ -44,9 +45,23 @@ USING (
 );
 
 -- Only authenticated users can create members (will be restricted by application logic)
+CREATE OR REPLACE FUNCTION is_not_already_a_member()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM members
+    WHERE user_id = auth.uid()
+  );
+$$;
+
 CREATE POLICY "Authenticated users can create members" ON members
-    FOR INSERT
-    WITH CHECK (auth.uid() IS NOT NULL);
+FOR SELECT
+USING (
+  is_not_already_a_member()
+);
 
 -- Members can only update/delete themselves, owners can update/delete anyone in tenant
 CREATE POLICY "Members can update own record or owners can update tenant members" ON members
@@ -75,6 +90,3 @@ CREATE TRIGGER update_members_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column(); 
 
-    -- Indexes
-    CREATE INDEX idx_members_user_tenant_role
-    ON members (user_id, tenant_id, role);

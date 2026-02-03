@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (!existingMember) {
-    const result = await createTenantForUser(supabase, user.id);
+    const result = await createTenantForUser(supabase);
     if (!result.success) {
       return redirectToError(request, result.error ?? "Could not create your workspace. Please try again.");
     }

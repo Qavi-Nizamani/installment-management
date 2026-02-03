@@ -40,7 +40,7 @@ export async function setupWorkspace(data: WorkspaceSetupPayload): Promise<Works
       };
     }
 
-    const result = await createTenantForUser(supabase, user.id, data.workspaceName);
+    const result = await createTenantForUser(supabase, data.workspaceName);
 
     if (!result.success) {
       return { success: false, error: result.error };

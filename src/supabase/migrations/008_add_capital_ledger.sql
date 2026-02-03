@@ -26,6 +26,7 @@ CREATE POLICY "capital_ledger_select_policy" ON capital_ledger
       SELECT 1 FROM members m
       WHERE m.user_id = auth.uid()
       AND m.tenant_id = capital_ledger.tenant_id
+      AND m.role = 'OWNER'
     )
   );
 
@@ -36,8 +37,8 @@ CREATE POLICY "capital_ledger_insert_policy" ON capital_ledger
       SELECT 1 FROM members m
       WHERE m.user_id = auth.uid()
       AND m.tenant_id = capital_ledger.tenant_id
+      AND m.role = 'OWNER'
     )
-    OR current_setting('role') = 'service_role'
   );
 
 CREATE POLICY "capital_ledger_update_policy" ON capital_ledger
@@ -47,6 +48,7 @@ CREATE POLICY "capital_ledger_update_policy" ON capital_ledger
       SELECT 1 FROM members m
       WHERE m.user_id = auth.uid()
       AND m.tenant_id = capital_ledger.tenant_id
+      AND m.role = 'OWNER'
     )
   );
 
@@ -57,5 +59,6 @@ CREATE POLICY "capital_ledger_delete_policy" ON capital_ledger
       SELECT 1 FROM members m
       WHERE m.user_id = auth.uid()
       AND m.tenant_id = capital_ledger.tenant_id
+      AND m.role = 'OWNER'
     )
   );
