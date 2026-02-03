@@ -20,15 +20,28 @@ ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 -- Create policies (Fixed to avoid infinite recursion)
 ----------------------------------
 
--- Members can view other members in the same tenant
+-- Users can always see their own member row (required for auth/middleware;
+-- without this, "same tenant" policy is recursive and hides your own row)
+CREATE OR REPLACE FUNCTION is_owner_of_tenant(p_tenant_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM members
+    WHERE tenant_id = p_tenant_id
+      AND user_id = auth.uid()
+      AND role = 'OWNER'
+  );
+$$;
+
 CREATE POLICY "Members can view same tenant members" ON members
-    FOR SELECT
-    USING (
-        tenant_id IN (
-            SELECT tenant_id FROM members 
-            WHERE user_id = auth.uid()
-        )
-    );
+FOR SELECT
+USING (
+  user_id = auth.uid()
+  OR is_owner_of_tenant(tenant_id)
+);
 
 -- Only authenticated users can create members (will be restricted by application logic)
 CREATE POLICY "Authenticated users can create members" ON members
@@ -61,3 +74,7 @@ CREATE TRIGGER update_members_updated_at
     BEFORE UPDATE ON members
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column(); 
+
+    -- Indexes
+    CREATE INDEX idx_members_user_tenant_role
+    ON members (user_id, tenant_id, role);
