@@ -21,14 +21,14 @@ CREATE POLICY "Users can view tenants they belong to" ON tenants
     USING (
         id IN (
             SELECT tenant_id FROM members 
-            WHERE user_id = auth.uid()
+            WHERE user_id = (SELECT  auth.uid())
         )
     );
 
 -- Authenticated users can create tenants
 CREATE POLICY "Authenticated users can create tenants" ON tenants
     FOR INSERT
-    WITH CHECK (auth.uid() IS NOT NULL);
+    WITH CHECK ((SELECT auth.uid()) IS NOT NULL);
 
 -- Only tenant owners can update their tenant (ownership via members.role = 'OWNER')
 CREATE POLICY "Tenant owners can update their tenant" ON tenants
@@ -36,7 +36,7 @@ CREATE POLICY "Tenant owners can update their tenant" ON tenants
     USING (
         id IN (
             SELECT tenant_id FROM members 
-            WHERE user_id = auth.uid() AND role = 'OWNER'
+            WHERE user_id = (SELECT auth.uid()) AND role = 'OWNER'
         )
     );
 
@@ -46,7 +46,7 @@ CREATE POLICY "Tenant owners can delete their tenant" ON tenants
     USING (
         id IN (
             SELECT tenant_id FROM members 
-            WHERE user_id = auth.uid() AND role = 'OWNER'
+            WHERE user_id = (SELECT auth.uid()) AND role = 'OWNER'
         )
     );
 

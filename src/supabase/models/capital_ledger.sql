@@ -21,7 +21,7 @@ CREATE POLICY "capital_ledger_select_policy" ON capital_ledger
   USING (
     EXISTS (
       SELECT 1 FROM members m
-      WHERE m.user_id = auth.uid()
+      WHERE m.user_id = (SELECT auth.uid())
       AND m.tenant_id = capital_ledger.tenant_id
       AND m.role = 'OWNER'
     )
@@ -32,7 +32,7 @@ CREATE POLICY "capital_ledger_insert_policy" ON capital_ledger
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM members m
-      WHERE m.user_id = auth.uid()
+      WHERE m.user_id = (SELECT auth.uid())
       AND m.tenant_id = capital_ledger.tenant_id
       AND m.role = 'OWNER'
     )
@@ -43,7 +43,7 @@ CREATE POLICY "capital_ledger_update_policy" ON capital_ledger
   USING (
     EXISTS (
       SELECT 1 FROM members m
-      WHERE m.user_id = auth.uid()
+      WHERE m.user_id = (SELECT auth.uid())
       AND m.tenant_id = capital_ledger.tenant_id
       AND m.role = 'OWNER'
     )
@@ -54,7 +54,7 @@ CREATE POLICY "capital_ledger_delete_policy" ON capital_ledger
   USING (
     EXISTS (
       SELECT 1 FROM members m
-      WHERE m.user_id = auth.uid()
+      WHERE m.user_id = (SELECT auth.uid())
       AND m.tenant_id = capital_ledger.tenant_id
       AND m.role = 'OWNER'
     )

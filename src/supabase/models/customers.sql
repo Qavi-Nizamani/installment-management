@@ -26,7 +26,7 @@ CREATE POLICY "Customers are viewable by tenant members" ON customers
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = customers.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
         )
     );
 
@@ -36,7 +36,7 @@ CREATE POLICY "Customers are insertable by tenant members" ON customers
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = customers.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
         )
     );
 
@@ -46,7 +46,7 @@ CREATE POLICY "Customers are updatable by tenant members" ON customers
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = customers.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
         )
     );
 
@@ -56,7 +56,7 @@ CREATE POLICY "Customers are deletable by tenant owners" ON customers
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = customers.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
             AND members.role = 'OWNER'
         )
     );

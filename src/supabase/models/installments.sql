@@ -33,7 +33,7 @@ CREATE POLICY "Installments are viewable by tenant members" ON installments
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = installments.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
         )
     );
 
@@ -43,7 +43,7 @@ CREATE POLICY "Installments are insertable by tenant members" ON installments
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = installments.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
         )
     );
 
@@ -53,7 +53,7 @@ CREATE POLICY "Installments are updatable by tenant members" ON installments
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = installments.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
         )
     );
 
@@ -63,7 +63,7 @@ CREATE POLICY "Installments are deletable by tenant owners" ON installments
         EXISTS (
             SELECT 1 FROM members
             WHERE members.tenant_id = installments.tenant_id
-            AND members.user_id = auth.uid()
+            AND members.user_id = (SELECT auth.uid())
             AND members.role = 'OWNER'
         )
     );

@@ -32,7 +32,7 @@ AS $$
     SELECT 1
     FROM members
     WHERE tenant_id = p_tenant_id
-      AND user_id = auth.uid()
+      AND user_id = (SELECT auth.uid())
       AND role = 'OWNER'
   );
 $$;
@@ -42,25 +42,6 @@ FOR SELECT
 USING (
   user_id = auth.uid()
   OR is_owner_of_tenant(tenant_id)
-);
-
--- Only authenticated users can create members (will be restricted by application logic)
-CREATE OR REPLACE FUNCTION is_not_already_a_member()
-RETURNS BOOLEAN
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM members
-    WHERE user_id = auth.uid()
-  );
-$$;
-
-CREATE POLICY "Authenticated users can create members" ON members
-FOR SELECT
-USING (
-  is_not_already_a_member()
 );
 
 -- Members can only update/delete themselves, owners can update/delete anyone in tenant
