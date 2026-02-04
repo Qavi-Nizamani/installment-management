@@ -30,16 +30,17 @@ export function InstallmentsScreen() {
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   
-  // Default to showing installments due within the next 30 days
+  // Default to showing installments due in the current month
   const today = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(today.getDate() + 30);
-  
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
   const [filters, setFilters] = useState<InstallmentFilters>({
     date_range: {
-      start_date: today.toISOString().split('T')[0],
-      end_date: thirtyDaysFromNow.toISOString().split('T')[0]
-    }
+      start_date: monthStart.toISOString().split('T')[0],
+      end_date: monthEnd.toISOString().split('T')[0],
+    },
+    status: ["PENDING", "OVERDUE"],
   });
   const [searchTerm, setSearchTerm] = useState("");
 
