@@ -86,10 +86,16 @@ export async function createCapitalEntry(
     const context = await requireTenantAccess();
     const supabase = await createClient();
 
-    if (payload.amount <= 0) {
+    if (
+      (payload.type === "ADJUSTMENT" && payload.amount === 0) ||
+      (payload.type !== "ADJUSTMENT" && payload.amount <= 0)
+    ) {
       return {
         success: false,
-        error: "Amount must be greater than zero.",
+        error:
+          payload.type === "ADJUSTMENT"
+            ? "Adjustment amount cannot be zero."
+            : "Amount must be greater than zero.",
       };
     }
 

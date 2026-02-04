@@ -112,8 +112,15 @@ export default function CapitalList({ entries, isLoading }: CapitalListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.id}>
+            {entries.map((entry) => {
+              const amount = Number(entry.amount);
+              const isNegative = amount < 0;
+              const isOutflow = entry.type === "WITHDRAWAL" || isNegative;
+              const sign = isOutflow ? "-" : "+";
+              const displayAmount = Math.abs(amount);
+
+              return (
+                <TableRow key={entry.id}>
                 <TableCell className="text-muted-foreground">
                   {fmtDate(entry.created_at)}
                 </TableCell>
@@ -122,19 +129,20 @@ export default function CapitalList({ entries, isLoading }: CapitalListProps) {
                 </TableCell>
                 <TableCell
                   className={
-                    entry.type === "WITHDRAWAL"
+                    isOutflow
                       ? "font-medium text-red-600"
                       : "font-medium"
                   }
                 >
-                  {entry.type === "WITHDRAWAL" ? "-" : "+"}
-                  {fmtCurrency(Number(entry.amount))}
+                  {sign}
+                  {fmtCurrency(displayAmount)}
                 </TableCell>
                 <TableCell className="max-w-[200px] truncate text-muted-foreground">
                   {entry.notes || "—"}
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>

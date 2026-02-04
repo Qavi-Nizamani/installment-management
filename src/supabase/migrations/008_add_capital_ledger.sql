@@ -6,7 +6,10 @@ CREATE TABLE IF NOT EXISTS capital_ledger (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('INVESTMENT', 'WITHDRAWAL', 'ADJUSTMENT')),
-  amount NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  amount NUMERIC(14,2) NOT NULL CHECK (
+    (type = 'ADJUSTMENT' AND amount <> 0)
+    OR (type IN ('INVESTMENT', 'WITHDRAWAL') AND amount > 0)
+  ),
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );

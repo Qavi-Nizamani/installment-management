@@ -37,16 +37,40 @@ import {
 import { useCapitalStore } from "@/store/capital.store";
 import { toast } from "sonner";
 
-const CapitalEntrySchema = z.object({
-  type: z.enum(["INVESTMENT", "WITHDRAWAL", "ADJUSTMENT"]),
-  amount: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-      message: "Amount must be greater than zero",
-    }),
-  notes: z.string().optional().or(z.literal("")),
-});
+const CapitalEntrySchema = z
+  .object({
+    type: z.enum(["INVESTMENT", "WITHDRAWAL", "ADJUSTMENT"]),
+    amount: z
+      .string()
+      .min(1, "Amount is required")
+      .refine((val) => !isNaN(parseFloat(val)), {
+        message: "Amount must be a valid number",
+      }),
+    notes: z.string().optional().or(z.literal("")),
+  })
+  .superRefine((data, ctx) => {
+    const amount = parseFloat(data.amount);
+    if (Number.isNaN(amount)) return;
+
+    if (data.type === "ADJUSTMENT") {
+      if (amount === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["amount"],
+          message: "Adjustment cannot be zero",
+        });
+      }
+      return;
+    }
+
+    if (amount <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["amount"],
+        message: "Amount must be greater than zero",
+      });
+    }
+  });
 
 type CapitalEntryFormData = z.infer<typeof CapitalEntrySchema>;
 
@@ -111,6 +135,8 @@ export default function AddCapitalEntryModal({
     }
   };
 
+  const selectedType = form.watch("type");
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -121,7 +147,7 @@ export default function AddCapitalEntryModal({
           </DialogTitle>
           <DialogDescription>
             Record an investment, withdrawal, or adjustment to your capital
-            ledger.
+            ledger. Adjustments can be positive or negative.
           </DialogDescription>
         </DialogHeader>
 
@@ -166,8 +192,12 @@ export default function AddCapitalEntryModal({
                     <Input
                       type="number"
                       step="0.01"
-                      min="0"
-                      placeholder="0.00"
+                      min={selectedType === "ADJUSTMENT" ? undefined : "0"}
+                      placeholder={
+                        selectedType === "ADJUSTMENT"
+                          ? "e.g. -100.00 or 100.00"
+                          : "0.00"
+                      }
                       {...field}
                       disabled={isPending}
                     />
