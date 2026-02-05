@@ -70,6 +70,7 @@ CREATE OR REPLACE FUNCTION create_tenant(p_name TEXT)
     RETURNS tenants
     LANGUAGE plpgsql
     SECURITY DEFINER
+    set search_path = public, auth
     AS $$
     DECLARE
     v_tenant tenants;
