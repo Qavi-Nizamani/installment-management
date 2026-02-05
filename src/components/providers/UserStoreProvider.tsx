@@ -11,7 +11,7 @@ interface UserStoreProviderProps {
 
 export function UserStoreProvider({ children }: UserStoreProviderProps) {
   const { user, loading } = useAuth();
-  const [loadingMessage, setLoadingMessage] = useState("Fetching user info");
+  const [loadingMessage, setLoadingMessage] = useState("Getting user info");
   const loadingHints = [
     "Checking your workspace setup",
     "Making sure everything is ready",
@@ -26,9 +26,9 @@ export function UserStoreProvider({ children }: UserStoreProviderProps) {
     if (user) {
       setUser(user);
       void (async () => {
-        setLoadingMessage("Fetching tenant info");
+        setLoadingMessage("Getting tenant info");
         await fetchTenantContext();
-        setLoadingMessage("Fetching subscription info");
+        setLoadingMessage("Getting subscription info");
         await fetchSubscription();
       })();
     } else {
