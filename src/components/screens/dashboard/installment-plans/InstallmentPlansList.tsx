@@ -42,6 +42,7 @@ import { useState } from "react";
 import { deleteInstallmentPlan } from "@/services/installment-plans/installmentPlans.service";
 import type { InstallmentPlan } from "@/types/installment-plans";
 import { fmtCurrency } from "@/components/utils/format";
+import { useUserStore } from "@/store/user.store";
 
 interface InstallmentPlansListProps {
   plans: InstallmentPlan[];
@@ -100,6 +101,7 @@ export function InstallmentPlansList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<InstallmentPlan | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const tenantId = useUserStore((state) => state.tenant?.id);
 
   const handleDeleteClick = (plan: InstallmentPlan) => {
     setPlanToDelete(plan);
@@ -111,7 +113,11 @@ export function InstallmentPlansList({
 
     try {
       setIsDeleting(true);
-      const response = await deleteInstallmentPlan(planToDelete.id);
+      if (!tenantId) {
+        console.error("Tenant context required");
+        return;
+      }
+      const response = await deleteInstallmentPlan(planToDelete.id, tenantId);
       
       if (response.success) {
         onPlanDeleted();

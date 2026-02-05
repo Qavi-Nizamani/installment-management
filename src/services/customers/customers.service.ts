@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 
 // Export the same types that are expected by the store
 export interface Customer {
@@ -60,14 +60,21 @@ export interface ServiceResponse<T> {
   error?: string;
 }
 
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
+
 /**
  * Get all customers for the authenticated user's tenant
  */
-export async function getCustomers(): Promise<ServiceResponse<Customer[]>> {
+export async function getCustomers(
+  tenantId?: string
+): Promise<ServiceResponse<Customer[]>> {
   try {
-    // Use tenant guard to get secure context
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -76,7 +83,7 @@ export async function getCustomers(): Promise<ServiceResponse<Customer[]>> {
       .order('created_at', { ascending: false });
 
     // Apply tenant filter for security
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching customers:', error);
@@ -102,11 +109,11 @@ export async function getCustomers(): Promise<ServiceResponse<Customer[]>> {
 /**
  * Get all customers with calculated stats (active plans, total spent)
  */
-export async function getCustomersWithStats(): Promise<ServiceResponse<CustomerWithStats[]>> {
+export async function getCustomersWithStats(
+  tenantId?: string
+): Promise<ServiceResponse<CustomerWithStats[]>> {
   try {
-    // Use tenant guard to get secure context
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // Get customers with their installment plans data
@@ -129,7 +136,7 @@ export async function getCustomersWithStats(): Promise<ServiceResponse<CustomerW
       .order('created_at', { ascending: false });
 
     // Apply tenant filter for security
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching customers with stats:', error);
@@ -183,10 +190,12 @@ export async function getCustomersWithStats(): Promise<ServiceResponse<CustomerW
 /**
  * Get customer by ID (with tenant security)
  */
-export async function getCustomerById(id: string): Promise<ServiceResponse<Customer>> {
+export async function getCustomerById(
+  id: string,
+  tenantId?: string
+): Promise<ServiceResponse<Customer>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -195,7 +204,7 @@ export async function getCustomerById(id: string): Promise<ServiceResponse<Custo
       .eq('id', id)
       .single();
 
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching customer:', error);
@@ -221,17 +230,18 @@ export async function getCustomerById(id: string): Promise<ServiceResponse<Custo
 /**
  * Create a new customer in the user's tenant
  */
-export async function createCustomer(payload: CreateCustomerPayload): Promise<ServiceResponse<Customer>> {
+export async function createCustomer(
+  payload: CreateCustomerPayload,
+  tenantId?: string
+): Promise<ServiceResponse<Customer>> {
   try {
-    // Ensure user has tenant access
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('customers')
       .insert({
-        tenant_id: context.tenantId, // Ensure customer belongs to user's tenant
+        tenant_id: resolvedTenantId, // Ensure customer belongs to user's tenant
         name: payload.name,
         phone: payload.phone,
         address: payload.address,
@@ -266,11 +276,11 @@ export async function createCustomer(payload: CreateCustomerPayload): Promise<Se
  */
 export async function updateCustomer(
   id: string, 
-  payload: UpdateCustomerPayload
+  payload: UpdateCustomerPayload,
+  tenantId?: string
 ): Promise<ServiceResponse<Customer>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -283,7 +293,7 @@ export async function updateCustomer(
       .select()
       .single();
 
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error updating customer:', error);
@@ -309,10 +319,12 @@ export async function updateCustomer(
 /**
  * Delete customer (with tenant security)
  */
-export async function deleteCustomer(id: string): Promise<ServiceResponse<void>> {
+export async function deleteCustomer(
+  id: string,
+  tenantId?: string
+): Promise<ServiceResponse<void>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -320,7 +332,7 @@ export async function deleteCustomer(id: string): Promise<ServiceResponse<void>>
       .delete()
       .eq('id', id);
 
-    const { error } = await withTenantFilter(query, context.tenantId);
+    const { error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error deleting customer:', error);
@@ -345,14 +357,16 @@ export async function deleteCustomer(id: string): Promise<ServiceResponse<void>>
 /**
  * Search customers (with tenant security)
  */
-export async function searchCustomers(searchTerm: string): Promise<ServiceResponse<Customer[]>> {
+export async function searchCustomers(
+  searchTerm: string,
+  tenantId?: string
+): Promise<ServiceResponse<Customer[]>> {
   if (!searchTerm.trim()) {
-    return getCustomers();
+    return getCustomers(tenantId);
   }
 
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -361,7 +375,7 @@ export async function searchCustomers(searchTerm: string): Promise<ServiceRespon
       .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,national_id.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false });
 
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error searching customers:', error);
@@ -387,17 +401,18 @@ export async function searchCustomers(searchTerm: string): Promise<ServiceRespon
 /**
  * Get customer statistics (with tenant security)
  */
-export async function getCustomerStats(): Promise<ServiceResponse<CustomerStats>> {
+export async function getCustomerStats(
+  tenantId?: string
+): Promise<ServiceResponse<CustomerStats>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
       .from('customers')
       .select('*');
 
-    const { data: customers, error } = await withTenantFilter(query, context.tenantId);
+    const { data: customers, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching customer stats:', error);

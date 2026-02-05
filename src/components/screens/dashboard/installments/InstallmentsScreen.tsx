@@ -12,6 +12,7 @@ import type {
   InstallmentSearchParams,
 } from "@/types/installments/installments.types";
 import { getInstallmentStats } from "@/services/installments/installments.analytics";
+import { useUserStore } from "@/store/user.store";
 
 export function InstallmentsScreen() {
   const [installments, setInstallments] = useState<Installment[]>([]);
@@ -29,6 +30,7 @@ export function InstallmentsScreen() {
   });
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const tenantId = useUserStore((state) => state.tenant?.id);
   
   // Default to showing installments due in the current month
   const today = new Date();
@@ -54,7 +56,11 @@ export function InstallmentsScreen() {
         sort_order: "asc",
       };
 
-      const response = await getInstallments(searchParams);
+      if (!tenantId) {
+        setInstallments([]);
+        return;
+      }
+      const response = await getInstallments(searchParams, tenantId);
       if (response.success && response.data) {
         setInstallments(response.data);
       } else {
@@ -67,12 +73,15 @@ export function InstallmentsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, filters]);
+  }, [searchTerm, filters, tenantId]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setStatsLoading(true);
-      const response = await getInstallmentStats();
+      if (!tenantId) {
+        return;
+      }
+      const response = await getInstallmentStats(tenantId);
       if (response.success && response.data) {
         setStats(response.data);
       } else {
@@ -83,13 +92,13 @@ export function InstallmentsScreen() {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [tenantId]);
 
   // Initial data load
   useEffect(() => {
     fetchInstallments();
     fetchStats();
-  }, [fetchInstallments]);
+  }, [fetchInstallments, fetchStats]);
 
   // Refetch when filters or search term change (handled by fetchInstallments dependencies)
   // The previous useEffect above will automatically trigger when fetchInstallments changes

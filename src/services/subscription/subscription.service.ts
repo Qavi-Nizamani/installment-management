@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 import type { SubscriptionWithPlan } from "@/types/subscription";
 
 interface ServiceResponse<T> {
@@ -10,18 +10,27 @@ interface ServiceResponse<T> {
   error?: string;
 }
 
-export async function getCurrentSubscription(): Promise<
-  ServiceResponse<SubscriptionWithPlan>
-> {
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
+
+export async function getCurrentSubscription(
+  tenantId?: string
+): Promise<ServiceResponse<SubscriptionWithPlan>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await withTenantFilter(
+      supabase
       .from("subscriptions")
       .select("*, plan:plans(*)")
-      .eq("tenant_id", context.tenantId)
-      .single();
+      .single(),
+      resolvedTenantId
+    );
 
     if (error || !data) {
       return {

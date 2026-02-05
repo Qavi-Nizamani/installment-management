@@ -7,6 +7,7 @@ import {
   getCapitalStats,
   createCapitalEntry,
 } from "@/services/capital/capital.service";
+import { useUserStore } from "@/store/user.store";
 
 interface CapitalState {
   entries: CapitalLedgerEntry[];
@@ -37,7 +38,8 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await getCapitalEntries();
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getCapitalEntries(tenantId);
 
       if (response.success) {
         set({ entries: response.data || [], isLoading: false });
@@ -55,7 +57,8 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
 
   fetchStats: async () => {
     try {
-      const response = await getCapitalStats();
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getCapitalStats(tenantId);
 
       if (response.success) {
         set({ stats: response.data || null });
@@ -91,7 +94,8 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
     set({ isCreating: true, error: null });
 
     try {
-      const response = await createCapitalEntry(payload);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await createCapitalEntry(payload, tenantId);
 
       if (response.success) {
         await get().fetchEntries();

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coins, Loader2 } from "lucide-react";
 import { getCapitalStats } from "@/services/capital/capital.service";
 import { fmtCurrency } from "@/components/utils/format";
+import { useUserStore } from "@/store/user.store";
 
 interface AvailableFundsCardProps {
   /** Show link to Capital page. Default: false */
@@ -19,11 +20,19 @@ interface AvailableFundsCardProps {
 export function AvailableFundsCard({ showLink = false, className, refreshTrigger }: AvailableFundsCardProps) {
   const [availableFunds, setAvailableFunds] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const tenantId = useUserStore((state) => state.tenant?.id);
 
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    getCapitalStats().then((response) => {
+    if (!tenantId) {
+      setAvailableFunds(null);
+      setIsLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
+    getCapitalStats(tenantId).then((response) => {
       if (mounted && response.success && response.data) {
         setAvailableFunds(response.data.availableFunds);
       }
@@ -32,7 +41,7 @@ export function AvailableFundsCard({ showLink = false, className, refreshTrigger
     return () => {
       mounted = false;
     };
-  }, [refreshTrigger]);
+  }, [refreshTrigger, tenantId]);
 
   const card = (
     <Card className={className}>

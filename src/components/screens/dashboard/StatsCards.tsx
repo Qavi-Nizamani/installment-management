@@ -14,6 +14,7 @@ import {
 import { getDashboardCardsData } from "@/services/dashboard/dashboard.analytics";
 import type { DashboardCardsData } from "@/services/dashboard/dashboard.types";
 import { fmtCurrency } from "@/components/utils/format";
+import { useUserStore } from "@/store/user.store";
 
 /** Format change value: backend sends percentage (e.g. 100, -100), display as "+100%", "-100%", "0%" */
 function fmtPercent(percent: number): string {
@@ -82,12 +83,18 @@ export function StatsCards() {
   const [stats, setStats] = useState<DashboardCardsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tenantId = useUserStore((state) => state.tenant?.id);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
-      const response = await getDashboardCardsData();
+      if (!tenantId) {
+        setError("Tenant context required.");
+        setLoading(false);
+        return;
+      }
+      const response = await getDashboardCardsData(tenantId);
       if (response.success && response.data) {
         setStats(response.data);
       } else {
@@ -96,7 +103,7 @@ export function StatsCards() {
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [tenantId]);
 
   if (loading) {
     return (

@@ -25,6 +25,7 @@ import { createInstallmentPlan } from '@/services/installment-plans/installmentP
 import { getCustomers, type Customer } from '@/services/customers/customers.service';
 import { getCapitalStats } from '@/services/capital/capital.service';
 import type { CreateInstallmentPlanPayload } from '@/types/installment-plans';
+import { useUserStore } from "@/store/user.store";
 
 interface CreatePlanModalProps {
   isOpen: boolean;
@@ -63,12 +64,17 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
   const [availableFunds, setAvailableFunds] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const tenantId = useUserStore((state) => state.tenant?.id);
 
   // Load customers and available funds when modal opens
   useEffect(() => {
     if (isOpen) {
       loadCustomers();
-      getCapitalStats().then((response) => {
+      if (!tenantId) {
+        setAvailableFunds(null);
+        return;
+      }
+      getCapitalStats(tenantId).then((response) => {
         if (response.success && response.data) {
           setAvailableFunds(response.data.availableFunds);
         } else {
@@ -76,7 +82,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
         }
       });
     }
-  }, [isOpen]);
+  }, [isOpen, tenantId]);
 
   // Calculate finance amount and preview amounts when form data changes
   useEffect(() => {
@@ -118,7 +124,11 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
 
   const loadCustomers = async () => {
     try {
-      const response = await getCustomers();
+      if (!tenantId) {
+        setCustomers([]);
+        return;
+      }
+      const response = await getCustomers(tenantId);
       if (response.success && response.data) {
         setCustomers(response.data);
       }
@@ -183,7 +193,13 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
         notes: formData.notes.trim() || undefined,
       };
 
-      const response = await createInstallmentPlan(payload);
+      if (!tenantId) {
+        setErrors({ general: "Tenant context required" });
+        setLoading(false);
+        return;
+      }
+
+      const response = await createInstallmentPlan(payload, tenantId);
 
       if (response.success) {
         onPlanCreated();

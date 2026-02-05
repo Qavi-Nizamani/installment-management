@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 import type { 
   InstallmentRecord,
   InstallmentStats
@@ -20,6 +20,13 @@ export interface ServiceResponse<T> {
   error?: string;
 }
 
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
+
 // ==================== ANALYTICS TYPES ====================
 // Analytics types have been moved to @/helpers/installments.analytics.helper.ts for better organization
 
@@ -37,17 +44,18 @@ export type {
 /**
  * Get comprehensive installment statistics for dashboard
  */
-export async function getInstallmentStats(): Promise<ServiceResponse<InstallmentStats>> {
+export async function getInstallmentStats(
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentStats>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
       .from('installments')
       .select('*');
 
-    const { data: installments, error } = await withTenantFilter(query, context.tenantId);
+    const { data: installments, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching installment stats:', error);
@@ -89,10 +97,11 @@ export async function getInstallmentStats(): Promise<ServiceResponse<Installment
 /**
  * Get payment analytics including trends and delays
  */
-export async function getPaymentAnalytics(): Promise<ServiceResponse<PaymentAnalytics>> {
+export async function getPaymentAnalytics(
+  tenantId?: string
+): Promise<ServiceResponse<PaymentAnalytics>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -101,7 +110,7 @@ export async function getPaymentAnalytics(): Promise<ServiceResponse<PaymentAnal
       .eq('status', 'PAID')
       .not('paid_on', 'is', null);
 
-    const { data: paidInstallments, error } = await withTenantFilter(query, context.tenantId);
+    const { data: paidInstallments, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching payment analytics:', error);
@@ -121,17 +130,18 @@ export async function getPaymentAnalytics(): Promise<ServiceResponse<PaymentAnal
 /**
  * Get collection analytics and risk assessment
  */
-export async function getCollectionAnalytics(): Promise<ServiceResponse<CollectionAnalytics>> {
+export async function getCollectionAnalytics(
+  tenantId?: string
+): Promise<ServiceResponse<CollectionAnalytics>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
       .from('installments')
       .select('*');
 
-    const { data: installments, error } = await withTenantFilter(query, context.tenantId);
+    const { data: installments, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching collection analytics:', error);
@@ -153,11 +163,11 @@ export async function getCollectionAnalytics(): Promise<ServiceResponse<Collecti
  */
 export async function getPeriodAnalytics(
   period: 'week' | 'month' | 'quarter' | 'year',
-  startDate?: string
+  startDate?: string,
+  tenantId?: string
 ): Promise<ServiceResponse<PeriodAnalytics>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const { calculatePeriodDates, calculatePreviousPeriodDates, calculatePeriodAnalytics } = await import('@/helpers/installments.analytics.helper');
@@ -170,7 +180,7 @@ export async function getPeriodAnalytics(
       .gte('due_date', start)
       .lte('due_date', end);
 
-    const { data: currentData, error: currentError } = await withTenantFilter(currentQuery, context.tenantId);
+    const { data: currentData, error: currentError } = await withTenantFilter(currentQuery, resolvedTenantId);
 
     if (currentError) {
       return { success: false, error: currentError.message };
@@ -185,7 +195,7 @@ export async function getPeriodAnalytics(
       .gte('due_date', prevStart)
       .lte('due_date', prevEnd);
 
-    const { data: prevData, error: prevError } = await withTenantFilter(prevQuery, context.tenantId);
+    const { data: prevData, error: prevError } = await withTenantFilter(prevQuery, resolvedTenantId);
 
     if (prevError) {
       return { success: false, error: prevError.message };

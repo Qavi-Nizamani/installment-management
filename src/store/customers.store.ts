@@ -13,6 +13,7 @@ import {
   searchCustomers,
   getCustomerStats
 } from '@/services/customers/customers.service';
+import { useUserStore } from "@/store/user.store";
 
 interface CustomersState {
   // Data
@@ -68,7 +69,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const response = await getCustomersWithStats();
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getCustomersWithStats(tenantId);
       
       console.log("response", response);
       if (response.success) {
@@ -90,7 +92,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
    */
   fetchCustomerStats: async () => {
     try {
-      const response = await getCustomerStats();
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getCustomerStats(tenantId);
       
       if (response.success) {
         set({ stats: response.data || null });
@@ -127,7 +130,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const response = await getCustomerById(id);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getCustomerById(id, tenantId);
       
       if (response.success) {
         set({ selectedCustomer: response.data || null, isLoading: false });
@@ -146,7 +150,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     set({ isCreating: true, error: null });
     
     try {
-      const response = await createCustomer(payload);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await createCustomer(payload, tenantId);
       
       if (response.success) {
         // Refresh the customer list to get updated stats
@@ -170,7 +175,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     set({ isUpdating: true, error: null });
     
     try {
-      const response = await updateCustomer(id, payload);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await updateCustomer(id, payload, tenantId);
       
       if (response.success) {
         // Refresh the customer list to get updated stats
@@ -197,7 +203,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     set({ isDeleting: true, error: null });
     
     try {
-      const response = await deleteCustomer(id);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await deleteCustomer(id, tenantId);
       
       if (response.success) {
         // Remove the customer from the list
@@ -231,7 +238,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
         // If search term is empty, fetch all customers
         await get().fetchCustomers();
       } else {
-        const response = await searchCustomers(term);
+        const tenantId = useUserStore.getState().tenant?.id;
+        const response = await searchCustomers(term, tenantId);
         
         if (response.success) {
           // For now, refresh all customers - we'd need a searchCustomersWithStats function for proper search

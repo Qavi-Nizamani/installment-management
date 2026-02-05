@@ -9,6 +9,7 @@ import { InstallmentPlansList } from "./InstallmentPlansList";
 import { CreatePlanModal } from "./CreatePlanModal";
 import { getInstallmentPlans, searchInstallmentPlans } from "@/services/installment-plans/installmentPlans.service";
 import type { InstallmentPlan } from "@/types/installment-plans";
+import { useUserStore } from "@/store/user.store";
 
 export function InstallmentPlansScreen() {
   const [plans, setPlans] = useState<InstallmentPlan[]>([]);
@@ -17,11 +18,17 @@ export function InstallmentPlansScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [fundsRefreshKey, setFundsRefreshKey] = useState(0);
+  const tenantId = useUserStore((state) => state.tenant?.id);
 
   const loadPlans = async () => {
     try {
       setLoading(true);
-      const response = await getInstallmentPlans();
+      if (!tenantId) {
+        setError("Tenant context required");
+        setLoading(false);
+        return;
+      }
+      const response = await getInstallmentPlans(tenantId);
       
       if (response.success && response.data) {
         setPlans(response.data);
@@ -40,7 +47,12 @@ export function InstallmentPlansScreen() {
   const handleSearch = async (searchValue: string) => {
     try {
       setLoading(true);
-      const response = await searchInstallmentPlans(searchValue);
+      if (!tenantId) {
+        setError("Tenant context required");
+        setLoading(false);
+        return;
+      }
+      const response = await searchInstallmentPlans(searchValue, tenantId);
       
       if (response.success && response.data) {
         setPlans(response.data);
@@ -87,7 +99,7 @@ export function InstallmentPlansScreen() {
 
   useEffect(() => {
     loadPlans();
-  }, []);
+  }, [tenantId]);
 
   if (error) {
     return (

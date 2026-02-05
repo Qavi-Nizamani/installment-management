@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 import type {
   ServiceResponse,
   DashboardCardsData,
@@ -70,11 +70,13 @@ function calculatePercentageChange(current: number, previous: number): number {
 /**
  * Get all dashboard cards data in a single function
  */
-export async function getDashboardCardsData(): Promise<
-  ServiceResponse<DashboardCardsData>
-> {
+export async function getDashboardCardsData(
+  tenantId?: string
+): Promise<ServiceResponse<DashboardCardsData>> {
   try {
-    const context = await requireTenantAccess();
+    if (!tenantId) {
+      throw new Error("Tenant context required");
+    }
     const supabase = await createClient();
 
     const currentDate = new Date();
@@ -94,7 +96,7 @@ export async function getDashboardCardsData(): Promise<
 
     const { data: plans, error: plansError } = await withTenantFilter(
       plansQuery,
-      context.tenantId
+      tenantId
     );
 
     if (plansError) {
@@ -109,7 +111,7 @@ export async function getDashboardCardsData(): Promise<
     const installmentsQuery = supabase.from("installments").select("*");
 
     const { data: allInstallments, error: installmentsError } =
-      await withTenantFilter(installmentsQuery, context.tenantId);
+      await withTenantFilter(installmentsQuery, tenantId);
 
     if (installmentsError) {
       console.error("Error fetching installments:", installmentsError);

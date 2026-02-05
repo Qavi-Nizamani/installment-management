@@ -44,6 +44,7 @@ import { markAsPaid, markAsPending } from "@/services/installments/installments.
 import type { Installment, InstallmentStatus } from "@/types/installments/installments.types";
 import { INSTALLMENT_STATUS_CONFIGS } from "@/types/installments/installments.types";
 import { fmtCurrency } from "@/components/utils/format";
+import { useUserStore } from "@/store/user.store";
 
 interface InstallmentsListProps {
   installments: Installment[];
@@ -105,6 +106,7 @@ export function InstallmentsList({
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [amountPaid, setAmountPaid] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const tenantId = useUserStore((state) => state.tenant?.id);
 
   const handleMarkAsPaid = (installment: Installment) => {
     setSelectedInstallment(installment);
@@ -131,11 +133,15 @@ export function InstallmentsList({
         noteDetail = ` (overpayment - ${fmtCurrency(parsedAmount - amountDue)})`;
       }
 
+      if (!tenantId) {
+        console.error("Tenant context required");
+        return;
+      }
       const response = await markAsPaid(selectedInstallment.id, {
         amount_paid: parsedAmount,
         paid_on: new Date().toISOString().split('T')[0],
         notes: `Payment of ${fmtCurrency(parsedAmount)} recorded from installments page${noteDetail}`
-      });
+      }, tenantId);
       
       if (response.success) {
         onInstallmentUpdated();
@@ -155,7 +161,15 @@ export function InstallmentsList({
   const handleMarkAsPending = async (installmentId: string) => {
     try {
       setIsUpdating(true);
-      const response = await markAsPending(installmentId, 'Marked as pending from installments page');
+      if (!tenantId) {
+        console.error("Tenant context required");
+        return;
+      }
+      const response = await markAsPending(
+        installmentId,
+        'Marked as pending from installments page',
+        tenantId
+      );
       
       if (response.success) {
         onInstallmentUpdated();

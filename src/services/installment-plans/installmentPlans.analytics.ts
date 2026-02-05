@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 import type {
   ServiceResponse,
   InstallmentPlanStats,
@@ -10,6 +10,13 @@ import type {
   CustomerAnalytics,
   InstallmentRecord,
 } from "./installmentPlans.types";
+
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
 
 // Interface for plan data with installments used in analytics
 interface PlanWithInstallments {
@@ -26,11 +33,11 @@ interface PlanWithInstallments {
 /**
  * Get comprehensive installment plans statistics
  */
-export async function getInstallmentPlanStats(): Promise<
-  ServiceResponse<InstallmentPlanStats>
-> {
+export async function getInstallmentPlanStats(
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentPlanStats>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
 
     const supabase = await createClient();
 
@@ -42,7 +49,7 @@ export async function getInstallmentPlanStats(): Promise<
 
     const { data: plans, error } = await withTenantFilter(
       query,
-      context.tenantId
+      resolvedTenantId
     );
 
     if (error) {
@@ -155,11 +162,11 @@ export async function getInstallmentPlanStats(): Promise<
 /**
  * Get revenue analytics
  */
-export async function getRevenueAnalytics(): Promise<
-  ServiceResponse<RevenueAnalytics>
-> {
+export async function getRevenueAnalytics(
+  tenantId?: string
+): Promise<ServiceResponse<RevenueAnalytics>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
 
     const supabase = await createClient();
 
@@ -168,7 +175,7 @@ export async function getRevenueAnalytics(): Promise<
 
     const { data: plans, error: plansError } = await withTenantFilter(
       plansQuery,
-      context.tenantId
+      resolvedTenantId
     );
 
     // Get all installments for revenue tracking
@@ -178,7 +185,7 @@ export async function getRevenueAnalytics(): Promise<
       .eq("status", "PAID");
 
     const { data: paidInstallments, error: installmentsError } =
-      await withTenantFilter(installmentsQuery, context.tenantId);
+      await withTenantFilter(installmentsQuery, resolvedTenantId);
 
     if (plansError || installmentsError) {
       console.error(
@@ -261,11 +268,11 @@ export async function getRevenueAnalytics(): Promise<
  * Get payment analytics
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export async function getPaymentAnalytics(): Promise<
-  ServiceResponse<PaymentAnalytics>
-> {
+export async function getPaymentAnalytics(
+  tenantId?: string
+): Promise<ServiceResponse<PaymentAnalytics>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
 
     const supabase = await createClient();
 
@@ -273,7 +280,7 @@ export async function getPaymentAnalytics(): Promise<
 
     const { data: installments, error } = await withTenantFilter(
       query,
-      context.tenantId
+      resolvedTenantId
     );
 
     if (error) {
@@ -377,11 +384,11 @@ export async function getPaymentAnalytics(): Promise<
  * Get customer analytics
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export async function getCustomerAnalytics(): Promise<
-  ServiceResponse<CustomerAnalytics>
-> {
+export async function getCustomerAnalytics(
+  tenantId?: string
+): Promise<ServiceResponse<CustomerAnalytics>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
 
     const supabase = await createClient();
 
@@ -393,7 +400,7 @@ export async function getCustomerAnalytics(): Promise<
 
     const { data: plans, error } = await withTenantFilter(
       query,
-      context.tenantId
+      resolvedTenantId
     );
 
     if (error) {

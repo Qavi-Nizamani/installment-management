@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 
 export type CapitalLedgerType = "INVESTMENT" | "WITHDRAWAL" | "ADJUSTMENT";
 
@@ -38,14 +38,23 @@ export interface ServiceResponse<T> {
   error?: string;
 }
 
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
+
 /**
  * Get all capital ledger entries for the authenticated user's tenant
  */
-export async function getCapitalEntries(): Promise<
+export async function getCapitalEntries(
+  tenantId?: string
+): Promise<
   ServiceResponse<CapitalLedgerEntry[]>
 > {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -53,7 +62,7 @@ export async function getCapitalEntries(): Promise<
       .select("*")
       .order("created_at", { ascending: false });
 
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error("Error fetching capital entries:", error);
@@ -81,9 +90,10 @@ export async function getCapitalEntries(): Promise<
  */
 export async function createCapitalEntry(
   payload: CreateCapitalEntryPayload,
+  tenantId?: string
 ): Promise<ServiceResponse<CapitalLedgerEntry>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     if (
@@ -102,7 +112,7 @@ export async function createCapitalEntry(
     const { data, error } = await supabase
       .from("capital_ledger")
       .insert({
-        tenant_id: context.tenantId,
+        tenant_id: resolvedTenantId,
         type: payload.type,
         amount: payload.amount,
         notes: payload.notes || null,
@@ -178,14 +188,16 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
 /**
  * Get capital statistics (totals, balance, available funds)
  */
-export async function getCapitalStats(): Promise<
+export async function getCapitalStats(
+  tenantId?: string
+): Promise<
   ServiceResponse<CapitalStats>
 > {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
     const [response, capitalDeployed] = await Promise.all([
-      getCapitalEntries(),
-      getCapitalDeployed(context.tenantId),
+      getCapitalEntries(resolvedTenantId),
+      getCapitalDeployed(resolvedTenantId),
     ]);
 
     if (!response.success || !response.data) {

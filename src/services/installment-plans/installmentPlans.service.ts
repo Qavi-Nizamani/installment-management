@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 import type {
   ServiceResponse,
   InstallmentPlan,
@@ -10,13 +10,21 @@ import type {
   UpdateInstallmentPlanPayload
 } from "./installmentPlans.types";
 
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
+
 /**
  * Get all installment plans with customer data and calculated fields
  */
-export async function getInstallmentPlans(): Promise<ServiceResponse<InstallmentPlan[]>> {
+export async function getInstallmentPlans(
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentPlan[]>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // Get installment plans with customer data
@@ -28,7 +36,7 @@ export async function getInstallmentPlans(): Promise<ServiceResponse<Installment
       `)
       .order('created_at', { ascending: false });
 
-    const { data: plans, error } = await withTenantFilter(query, context.tenantId);
+    const { data: plans, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching installment plans:', error);
@@ -65,10 +73,12 @@ export async function getInstallmentPlans(): Promise<ServiceResponse<Installment
 /**
  * Get installment plan by ID with full details
  */
-export async function getInstallmentPlanById(id: string): Promise<ServiceResponse<InstallmentPlan>> {
+export async function getInstallmentPlanById(
+  id: string,
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentPlan>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -80,7 +90,7 @@ export async function getInstallmentPlanById(id: string): Promise<ServiceRespons
       .eq('id', id)
       .single();
 
-    const { data: plan, error } = await withTenantFilter(query, context.tenantId);
+    const { data: plan, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching installment plan:', error);
@@ -113,11 +123,11 @@ export async function getInstallmentPlanById(id: string): Promise<ServiceRespons
  * Create a new installment plan
  */
 export async function createInstallmentPlan(
-  payload: CreateInstallmentPlanPayload
+  payload: CreateInstallmentPlanPayload,
+  tenantId?: string
 ): Promise<ServiceResponse<InstallmentPlan>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // Validate that customer belongs to the same tenant
@@ -125,7 +135,7 @@ export async function createInstallmentPlan(
       .from('customers')
       .select('id')
       .eq('id', payload.customer_id)
-      .eq('tenant_id', context.tenantId)
+      .eq('tenant_id', resolvedTenantId)
       .single();
 
     if (customerError || !customer) {
@@ -139,7 +149,7 @@ export async function createInstallmentPlan(
     const { data: plan, error } = await supabase
       .from('installment_plans')
       .insert({
-        tenant_id: context.tenantId,
+        tenant_id: resolvedTenantId,
         customer_id: payload.customer_id,
         title: payload.title,
         total_price: payload.total_price,
@@ -183,11 +193,11 @@ export async function createInstallmentPlan(
  */
 export async function updateInstallmentPlan(
   id: string,
-  payload: UpdateInstallmentPlanPayload
+  payload: UpdateInstallmentPlanPayload,
+  tenantId?: string
 ): Promise<ServiceResponse<InstallmentPlan>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // If customer_id is being updated, validate it belongs to same tenant
@@ -196,7 +206,7 @@ export async function updateInstallmentPlan(
         .from('customers')
         .select('id')
         .eq('id', payload.customer_id)
-        .eq('tenant_id', context.tenantId)
+        .eq('tenant_id', resolvedTenantId)
         .single();
 
       if (customerError || !customer) {
@@ -217,7 +227,7 @@ export async function updateInstallmentPlan(
       .select()
       .single();
 
-    const { data: plan, error } = await withTenantFilter(query, context.tenantId);
+    const { data: plan, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error updating installment plan:', error);
@@ -243,10 +253,12 @@ export async function updateInstallmentPlan(
 /**
  * Delete installment plan
  */
-export async function deleteInstallmentPlan(id: string): Promise<ServiceResponse<void>> {
+export async function deleteInstallmentPlan(
+  id: string,
+  tenantId?: string
+): Promise<ServiceResponse<void>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -254,7 +266,7 @@ export async function deleteInstallmentPlan(id: string): Promise<ServiceResponse
       .delete()
       .eq('id', id);
 
-    const { error } = await withTenantFilter(query, context.tenantId);
+    const { error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error deleting installment plan:', error);
@@ -278,15 +290,15 @@ export async function deleteInstallmentPlan(id: string): Promise<ServiceResponse
  * Search installment plans
  */
 export async function searchInstallmentPlans(
-  searchTerm: string
+  searchTerm: string,
+  tenantId?: string
 ): Promise<ServiceResponse<InstallmentPlan[]>> {
   if (!searchTerm.trim()) {
-    return getInstallmentPlans();
+    return getInstallmentPlans(tenantId);
   }
 
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -298,7 +310,7 @@ export async function searchInstallmentPlans(
       .or(`title.ilike.%${searchTerm}%,notes.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false });
 
-    const { data: plans, error } = await withTenantFilter(query, context.tenantId);
+    const { data: plans, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error searching installment plans:', error);

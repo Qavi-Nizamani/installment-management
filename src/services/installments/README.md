@@ -18,10 +18,10 @@ src/helpers/
 
 ### **1. Main Service (`installments.service.ts`)**
 **Purpose**: Core CRUD operations and data fetching
-- `getInstallments()` - Fetch installments with filters and pagination
-- `updateInstallment()` - Update installment data
-- `markAsPaid()` - Mark installment as paid
-- `markAsPending()` - Mark installment as pending
+- `getInstallments(tenantId)` - Fetch installments with filters and pagination
+- `updateInstallment(tenantId)` - Update installment data
+- `markAsPaid(tenantId)` - Mark installment as paid
+- `markAsPending(tenantId)` - Mark installment as pending
 
 **Re-exports for backward compatibility**:
 - Analytics functions from `./installments.analytics.ts`
@@ -49,11 +49,13 @@ src/helpers/
 ```typescript
 import { getInstallments, markAsPaid } from '@/services/installments/installments.service';
 
+const tenantId = "your-tenant-id";
+
 // Fetch installments with filters
 const response = await getInstallments({
   search_term: "John",
   filters: { status: ['PENDING'] }
-});
+}, tenantId);
 
 if (response.success) {
   console.log(response.data);
@@ -64,7 +66,7 @@ const paidResponse = await markAsPaid('installment-id', {
   amount_paid: 500,
   paid_date: '2024-01-15',
   notes: 'Cash payment'
-});
+}, tenantId);
 ```
 
 ### **Analytics Usage**
@@ -76,13 +78,13 @@ import {
 } from '@/services/installments/installments.analytics';
 
 // Get dashboard stats
-const stats = await getInstallmentStats();
+const stats = await getInstallmentStats(tenantId);
 
 // Get payment analytics
-const paymentAnalytics = await getPaymentAnalytics();
+const paymentAnalytics = await getPaymentAnalytics(tenantId);
 
 // Get collection analytics
-const collectionAnalytics = await getCollectionAnalytics();
+const collectionAnalytics = await getCollectionAnalytics(tenantId);
 ```
 
 ### **Helper Functions Usage**
@@ -174,7 +176,7 @@ interface PeriodAnalytics {
 
 ### **Server-Side Security**
 - All main functions use `"use server"` directive
-- Tenant isolation with `requireTenantAccess()` and `withTenantFilter()`
+- Tenant isolation with `withTenantFilter()` and explicit `tenantId` inputs
 - Proper error handling and logging
 
 ### **Type Safety**

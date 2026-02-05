@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getCurrentSubscription } from "@/services/subscription/subscription.service";
+import { getTenantContextSummary } from "@/services/tenant/tenant-context.service";
 import type { SubscriptionWithPlan } from "@/types/subscription";
 
 export interface AuthUser {
@@ -31,6 +32,7 @@ interface UserState {
   setUser: (user: AuthUser | null) => void;
   setMember: (member: MemberSummary | null) => void;
   setTenant: (tenant: TenantSummary | null) => void;
+  fetchTenantContext: () => Promise<void>;
   fetchSubscription: () => Promise<void>;
   clearError: () => void;
   reset: () => void;
@@ -41,22 +43,53 @@ const initialState = {
   member: null,
   tenant: null,
   subscription: null,
-  isLoadingSubscription: false,
+  isLoadingSubscription: true,
   error: null,
 };
 
-export const useUserStore = create<UserState>((set) => ({
+export const useUserStore = create<UserState>((set, get) => ({
   ...initialState,
 
   setUser: (user) => set({ user }),
   setMember: (member) => set({ member }),
   setTenant: (tenant) => set({ tenant }),
 
+  fetchTenantContext: async () => {
+    set({ error: null });
+
+    try {
+      const response = await getTenantContextSummary();
+      if (response.success && response.data) {
+        set({
+          tenant: response.data.tenant,
+          member: response.data.member,
+        });
+      } else {
+        set({
+          tenant: null,
+          member: null,
+          error: response.error || "Failed to fetch tenant context",
+        });
+      }
+    } catch {
+      set({
+        tenant: null,
+        member: null,
+        error: "An unexpected error occurred",
+      });
+    }
+  },
+
   fetchSubscription: async () => {
     set({ isLoadingSubscription: true, error: null });
 
     try {
-      const response = await getCurrentSubscription();
+      const tenantId = get().tenant?.id;
+      if (!tenantId) {
+        set({ subscription: null, isLoadingSubscription: false });
+        return;
+      }
+      const response = await getCurrentSubscription(tenantId);
       if (response.success) {
         set({
           subscription: response.data || null,

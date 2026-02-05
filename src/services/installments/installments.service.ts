@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
-import { requireTenantAccess, withTenantFilter } from "@/guards/tenant.guard";
+import { withTenantFilter } from "@/guards/tenant.guard";
 import type { 
   Installment, 
   InstallmentRecord,
@@ -18,6 +18,13 @@ export interface ServiceResponse<T> {
   data?: T;
   error?: string;
 }
+
+const requireTenantId = (tenantId?: string): string => {
+  if (!tenantId) {
+    throw new Error("Tenant context required");
+  }
+  return tenantId;
+};
 
 // ==================== DATABASE TYPES ====================
 
@@ -37,10 +44,12 @@ interface InstallmentWithRelations extends InstallmentRecord {
 /**
  * Get installments with search, filters, and pagination
  */
-export async function getInstallments(params: InstallmentSearchParams = {}): Promise<ServiceResponse<Installment[]>> {
+export async function getInstallments(
+  params: InstallmentSearchParams = {},
+  tenantId?: string
+): Promise<ServiceResponse<Installment[]>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     let query = supabase
@@ -117,7 +126,7 @@ export async function getInstallments(params: InstallmentSearchParams = {}): Pro
       query = query.range(start, end);
     }
 
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error fetching installments:', error);
@@ -168,10 +177,13 @@ export async function getInstallments(params: InstallmentSearchParams = {}): Pro
 /**
  * Update installment with new data
  */
-export async function updateInstallment(installmentId: string, payload: UpdateInstallmentPayload): Promise<ServiceResponse<InstallmentRecord>> {
+export async function updateInstallment(
+  installmentId: string,
+  payload: UpdateInstallmentPayload,
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentRecord>> {
   try {
-    const context = await requireTenantAccess();
-    
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -184,7 +196,7 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
       .select()
       .single();
 
-    const { data, error } = await withTenantFilter(query, context.tenantId);
+    const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
       console.error('Error updating installment:', error);
@@ -204,9 +216,13 @@ export async function updateInstallment(installmentId: string, payload: UpdateIn
  * - Partial payment: only updates amount_paid; status stays OVERDUE/PENDING, remaining stays on this installment
  * - Overpayment: excess amount reduces last installment
  */
-export async function markAsPaid(installmentId: string, payload: MarkAsPaidPayload): Promise<ServiceResponse<InstallmentRecord>> {
+export async function markAsPaid(
+  installmentId: string,
+  payload: MarkAsPaidPayload,
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentRecord>> {
   try {
-    const context = await requireTenantAccess();
+    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // Get the current installment
@@ -216,7 +232,7 @@ export async function markAsPaid(installmentId: string, payload: MarkAsPaidPaylo
         .select('*')
         .eq('id', installmentId)
         .single(),
-      context.tenantId
+      resolvedTenantId
     );
 
     if (fetchError || !currentInstallment) {
@@ -295,7 +311,11 @@ export async function markAsPaid(installmentId: string, payload: MarkAsPaidPaylo
     // }
 
     // Update current installment
-    const currentUpdateResult = await updateInstallment(installmentId, currentInstallmentUpdate);
+    const currentUpdateResult = await updateInstallment(
+      installmentId,
+      currentInstallmentUpdate,
+      resolvedTenantId
+    );
     if (!currentUpdateResult.success) {
       return currentUpdateResult;
     }
@@ -310,15 +330,20 @@ export async function markAsPaid(installmentId: string, payload: MarkAsPaidPaylo
 /**
  * Mark installment as pending
  */
-export async function markAsPending(installmentId: string, notes?: string): Promise<ServiceResponse<InstallmentRecord>> {
+export async function markAsPending(
+  installmentId: string,
+  notes?: string,
+  tenantId?: string
+): Promise<ServiceResponse<InstallmentRecord>> {
   try {
+    const resolvedTenantId = requireTenantId(tenantId);
     const updatePayload: UpdateInstallmentPayload = {
       status: 'PENDING' as InstallmentStatus,
       paid_on: undefined,
       notes
     };
 
-    return await updateInstallment(installmentId, updatePayload);
+    return await updateInstallment(installmentId, updatePayload, resolvedTenantId);
   } catch (error) {
     console.error('Error in markAsPending:', error);
     return { success: false, error: 'Failed to mark installment as pending' };

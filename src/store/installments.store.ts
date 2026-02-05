@@ -13,6 +13,7 @@ import {
   markAsPending
 } from '@/services/installments/installments.service';
 import { getInstallmentStats } from '@/services/installments/installments.analytics';
+import { useUserStore } from "@/store/user.store";
 
 interface InstallmentsState {
   // Data
@@ -65,7 +66,8 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const response = await getInstallments(params);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getInstallments(params, tenantId);
       
       if (response.success) {
         set({ 
@@ -90,7 +92,8 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
    */
   fetchInstallmentStats: async () => {
     try {
-      const response = await getInstallmentStats();
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getInstallmentStats(tenantId);
       
       if (response.success) {
         set({ stats: response.data || null });
@@ -139,7 +142,8 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
     set({ isUpdating: true, error: null });
     
     try {
-      const response = await updateInstallment(id, payload);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await updateInstallment(id, payload, tenantId);
       
       if (response.success) {
         // Refresh installments to get updated data
@@ -163,7 +167,8 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
     set({ isMarking: true, error: null });
     
     try {
-      const response = await markAsPaid(id, payload);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await markAsPaid(id, payload, tenantId);
       
       if (response.success) {
         // Refresh installments to get updated data
@@ -187,7 +192,8 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
     set({ isMarking: true, error: null });
     
     try {
-      const response = await markAsPending(id, notes);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await markAsPending(id, notes, tenantId);
       
       if (response.success) {
         // Refresh installments to get updated data
@@ -211,7 +217,8 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
     set({ isSearching: true, error: null });
     
     try {
-      const response = await getInstallments(params);
+      const tenantId = useUserStore.getState().tenant?.id;
+      const response = await getInstallments(params, tenantId);
       
       if (response.success) {
         set({ 
