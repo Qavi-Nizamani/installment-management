@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { UserStoreProvider } from "@/components/providers/UserStoreProvider";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -8,16 +9,18 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden lg:pl-16">
-        <Header />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <div className=" mx-auto">
-            {children}
-          </div>
-        </main>
+    <UserStoreProvider>
+      <div className="h-screen flex overflow-hidden bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden lg:pl-16">
+          <Header />
+          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <div className=" mx-auto">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </UserStoreProvider>
   );
 } 
