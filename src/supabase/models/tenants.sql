@@ -65,14 +65,15 @@ CREATE TRIGGER update_tenants_updated_at
     EXECUTE FUNCTION update_updated_at_column(); 
 
 
-    -- Authenticated users can create tenants
-    CREATE OR REPLACE FUNCTION create_tenant(p_name TEXT)
+-- Authenticated users can create tenants
+CREATE OR REPLACE FUNCTION create_tenant(p_name TEXT)
     RETURNS tenants
     LANGUAGE plpgsql
     SECURITY DEFINER
     AS $$
     DECLARE
     v_tenant tenants;
+    v_free_plan_id UUID;
     BEGIN
     -- Require authentication
     IF auth.uid() IS NULL THEN
@@ -85,6 +86,16 @@ CREATE TRIGGER update_tenants_updated_at
 
     INSERT INTO members (user_id, tenant_id, role)
     VALUES (auth.uid(), v_tenant.id, 'OWNER');
+
+    SELECT id INTO v_free_plan_id FROM plans WHERE code = 'FREE';
+    IF v_free_plan_id IS NULL THEN
+      INSERT INTO plans (code, active_plan_limit, price_pkr, billing_period)
+      VALUES ('FREE', NULL, 0, 'monthly')
+      RETURNING id INTO v_free_plan_id;
+    END IF;
+
+    INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
+    VALUES (v_tenant.id, v_free_plan_id, 'active', now(), NULL);
 
     RETURN v_tenant;
     END;
