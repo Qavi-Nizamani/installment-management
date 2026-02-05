@@ -76,10 +76,6 @@ CREATE OR REPLACE FUNCTION create_tenant(p_name TEXT)
     v_tenant tenants;
     v_free_plan_id UUID;
     BEGIN
-    -- Require authentication
-    IF auth.uid() IS NULL THEN
-      RAISE EXCEPTION 'Not authenticated';
-    END IF;
 
     INSERT INTO tenants (name)
     VALUES (p_name)
