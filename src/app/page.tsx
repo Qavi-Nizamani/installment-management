@@ -44,7 +44,7 @@ export default function Home() {
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            The all-in-one SaaS platform for businesses to manage installment plans, 
+            The all-in-one SaaS platform for businesses to manage installment plans,
             track payments, and provide seamless financing solutions to customers.
           </p>
 
@@ -81,11 +81,154 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Pricing Section */}
+          <div className="mt-8 mb-16 max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Pricing Tiers
+              </h2>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="flex justify-center mb-4">
+                  <span className="text-sm font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">
+                    Free (Trial / Small Shop)
+                  </span>
+                </div>
+                <p className="text-gray-600 mb-4 text-center">Start fast and validate your workflow.</p>
+                <ul className="space-y-2 text-gray-700 mb-6 text-left">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Up to 15 active plans
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    1 owner account
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Core tracking and reminders
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Share plans via WhatsApp
+                  </li>
+                </ul>
+                <div className="mt-auto text-center pt-6">
+                  <div className="text-2xl font-bold text-gray-900 mb-3">PKR 0</div>
+                  <a
+                    href="/auth/signup"
+                    className="inline-flex items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    Start Free
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex flex-col bg-white rounded-2xl shadow-md border border-blue-200 p-6 ring-1 ring-blue-100">
+                <div className="flex justify-center mb-4">
+                  <span className="text-sm font-semibold text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
+                    Starter
+                  </span>
+                </div>
+                <p className="text-gray-600 mb-4 text-center">Built for busy shops that need structure.</p>
+                <ul className="space-y-2 text-gray-700 mb-6 text-left">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Up to 150 active plans
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Up to 5 staff accounts
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Automated reminders
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Reports and exports
+                  </li>
+                </ul>
+                <div className="mt-auto text-center pt-6">
+                  <div className="text-2xl font-bold text-gray-900 mb-3">PKR 2,999/mo</div>
+                  <a
+                    href="/auth/signup"
+                    className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
+                  >
+                    Choose Starter
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="flex justify-center mb-4">
+                  <span className="text-sm font-semibold text-purple-700 bg-purple-100 px-3 py-1 rounded-full">
+                    Pro
+                  </span>
+                </div>
+                <p className="text-gray-600 mb-4 text-center">Scale confidently with advanced control.</p>
+                <ul className="space-y-2 text-gray-700 mb-6 text-left">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Unlimited active plans
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Unlimited users
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Advanced analytics
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Priority support
+                  </li>
+                </ul>
+                <div className="mt-auto text-center pt-6">
+                  <div className="text-2xl font-bold text-gray-900 mb-3">PKR 6,000/mo</div>
+                  <a
+                    href="/auth/signup"
+                    className="inline-flex items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    Go Pro
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Email Signup */}
           <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Get Early Access</h2>
             <p className="text-gray-600 mb-6">Be the first to know when we launch and get exclusive early access.</p>
-            
+
             <form className="space-y-4">
               <div>
                 <input
@@ -102,7 +245,7 @@ export default function Home() {
                 Notify Me When Ready
               </button>
             </form>
-            
+
             <p className="text-xs text-gray-500 mt-4 text-center">
               No spam, unsubscribe at any time. We respect your privacy.
             </p>
@@ -114,15 +257,15 @@ export default function Home() {
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-gray-600">Q4 2024 - Core platform development</span>
+                <span className="text-gray-600">Q3 2025 - MVP foundation and onboarding flow</span>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-gray-600">Q1 2025 - Beta testing with select partners</span>
+                <span className="text-gray-600">Q4 2025 - Private beta with partner shops</span>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                <span className="text-gray-600">Q2 2025 - Public launch</span>
+                <span className="text-gray-600">Q1 2026 - Public launch and payment automation</span>
               </div>
             </div>
           </div>
@@ -136,7 +279,9 @@ export default function Home() {
             <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded flex items-center justify-center">
               <span className="text-white font-bold text-xs">IM</span>
             </div>
-            <span className="text-gray-600">© 2025 InstallmentManager. All rights reserved.</span>
+            <span className="text-gray-600">
+              © {new Date().getFullYear()} InstallmentManager. All rights reserved.
+            </span>
           </div>
           <div className="flex space-x-6">
             <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Privacy</a>
