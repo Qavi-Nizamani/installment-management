@@ -102,7 +102,7 @@ export default function Home() {
                     <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Up to 15 active plans
+                    Up to 10 active plans
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,13 +114,7 @@ export default function Home() {
                     <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Core tracking and reminders
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Share plans via WhatsApp
+                    No credit card required
                   </li>
                 </ul>
                 <div className="mt-auto text-center pt-6">
@@ -140,25 +134,19 @@ export default function Home() {
                     Starter
                   </span>
                 </div>
-                <p className="text-gray-600 mb-4 text-center">Built for busy shops that need structure.</p>
+                <p className="text-gray-600 mb-4 text-center font-medium">Built for busy shops that need structure.</p>
                 <ul className="space-y-2 text-gray-700 mb-6 text-left">
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Up to 150 active plans
+                    Up to 100 active plans
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Up to 5 staff accounts
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Automated reminders
+                    Up to 3 staff accounts
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +156,7 @@ export default function Home() {
                   </li>
                 </ul>
                 <div className="mt-auto text-center pt-6">
-                  <div className="text-2xl font-bold text-gray-900 mb-3">PKR 2,999/mo</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-3">PKR 2,500/mo</div>
                   <a
                     href="/auth/signup"
                     className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
@@ -197,12 +185,6 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Unlimited users
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Advanced analytics
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
