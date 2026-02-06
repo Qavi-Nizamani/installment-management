@@ -130,45 +130,28 @@ export async function createInstallmentPlan(
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
-    // Validate that customer belongs to the same tenant
-    const { data: customer, error: customerError } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('id', payload.customer_id)
-      .eq('tenant_id', resolvedTenantId)
-      .single();
+    const { data: plan, error } = await supabase.rpc(
+      'create_installment_plan_with_limit',
+      {
+        p_tenant_id: resolvedTenantId,
+        p_customer_id: payload.customer_id,
+        p_title: payload.title,
+        p_total_price: payload.total_price,
+        p_upfront_paid: payload.upfront_paid,
+        p_finance_amount: payload.finance_amount,
+        p_monthly_percentage: payload.monthly_percentage,
+        p_total_months: payload.total_months,
+        p_start_date: payload.start_date,
+        p_business_model: payload.business_model,
+        p_notes: payload.notes ?? null,
+      }
+    );
 
-    if (customerError || !customer) {
-      return {
-        success: false,
-        error: 'Customer not found or access denied.',
-      };
-    }
-
-    // Create the installment plan
-    const { data: plan, error } = await supabase
-      .from('installment_plans')
-      .insert({
-        tenant_id: resolvedTenantId,
-        customer_id: payload.customer_id,
-        title: payload.title,
-        total_price: payload.total_price,
-        upfront_paid: payload.upfront_paid,
-        finance_amount: payload.finance_amount,
-        monthly_percentage: payload.monthly_percentage,
-        total_months: payload.total_months,
-        start_date: payload.start_date,
-        business_model: 'FINANCER_ONLY',
-        notes: payload.notes,
-      })
-      .select()
-      .single();
-
-    if (error) {
+    if (error || !plan) {
       console.error('Error creating installment plan:', error);
       return {
         success: false,
-        error: 'Failed to create installment plan.',
+        error: error?.message || 'Failed to create installment plan.',
       };
     }
 

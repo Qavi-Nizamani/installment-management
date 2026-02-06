@@ -26,6 +26,7 @@ import { getCustomers, type Customer } from '@/services/customers/customers.serv
 import { getCapitalStats } from '@/services/capital/capital.service';
 import type { CreateInstallmentPlanPayload } from '@/types/installment-plans';
 import { useUserStore } from "@/store/user.store";
+import { cn } from '@/lib/utils';
 
 interface CreatePlanModalProps {
   isOpen: boolean;
@@ -247,11 +248,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {errors.general && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
-              {errors.general}
-            </div>
-          )}
+
 
           {/* Business Model Selection */}
           {/* <div className="space-y-2">
@@ -457,6 +454,12 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
               <p className="text-xs text-blue-600">
                 *Calculated using trade profit: Profit = {formData.finance_amount} × {formData.monthly_percentage}% × {formData.total_months}
               </p>
+            </div>
+          )}
+
+          {errors.general && (
+            <div className={cn("bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm", errors.general.includes('PLAN_LIMIT_EXCEEDED') ? 'bg-green-50 border-green-200 text-green-600 font-medium' : '')}>
+              {errors.general.includes('PLAN_LIMIT_EXCEEDED') ? "You''ve reached the active plan limit for your subscription. Upgrade to create more plans and keep the momentum going." : errors.general}
             </div>
           )}
 
