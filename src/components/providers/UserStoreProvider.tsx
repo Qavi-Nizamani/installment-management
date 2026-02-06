@@ -11,7 +11,6 @@ interface UserStoreProviderProps {
 
 export function UserStoreProvider({ children }: UserStoreProviderProps) {
   const { user, loading } = useAuth();
-  const [loadingMessage, setLoadingMessage] = useState("Getting user info");
   const loadingHints = [
     "Checking your workspace setup",
     "Making sure everything is ready",
@@ -26,9 +25,7 @@ export function UserStoreProvider({ children }: UserStoreProviderProps) {
     if (user) {
       setUser(user);
       void (async () => {
-        setLoadingMessage("Getting tenant info");
         await fetchTenantContext();
-        setLoadingMessage("Getting subscription info");
         await fetchSubscription();
       })();
     } else {
@@ -49,14 +46,9 @@ export function UserStoreProvider({ children }: UserStoreProviderProps) {
       <div className="flex h-screen w-full items-center justify-center bg-gray-50 px-6">
         <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-6 py-4 shadow-sm">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-gray-900">
-              {loadingMessage}
-            </span>
-            <span className="text-xs text-gray-500">
-              {loadingHints[loadingHintIndex]}
-            </span>
-          </div>
+          <span className="text-xs text-gray-500">
+            {loadingHints[loadingHintIndex]}
+          </span>
         </div>
       </div>
     );
