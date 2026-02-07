@@ -39,7 +39,9 @@ export async function POST(request: Request) {
 
     const variantId = await resolveVariantId(planCode);
     const storeId = getStoreId();
-    const redirectUrl = `${new URL(request.url).origin}/dashboard/settings/subscription?checkout=success`;
+    const redirectUrl = `${new URL(request.url).origin}/dashboard/settings/subscription?checkout=success&plan_code=${encodeURIComponent(
+      planCode
+    )}`;
 
     const checkout = await createCheckout({
       storeId,

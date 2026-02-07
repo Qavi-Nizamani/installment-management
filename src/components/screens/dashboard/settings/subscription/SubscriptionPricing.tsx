@@ -25,6 +25,7 @@ export default function SubscriptionPricing() {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const checkoutSuccess = searchParams.get("checkout") === "success";
+  const expectedPlanCode = searchParams.get("plan_code") as PlanCode | null;
 
   useEffect(() => {
     if (!checkoutSuccess || !tenant?.id) {
@@ -32,65 +33,107 @@ export default function SubscriptionPricing() {
     }
 
     let isHandled = false;
+    let isActive = true;
     const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    setIsConfirming(true);
+    const confirmUpgrade = async () => {
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      setIsConfirming(true);
 
-    const channel = supabase
-      .channel(`subscription:${tenant.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "subscriptions",
-          filter: `tenant_id=eq.${tenant.id}`,
-        },
-        async () => {
-          if (isHandled) {
-            return;
-          }
-          isHandled = true;
-          await fetchSubscription();
-          setSuccessMessage("Subscription confirmed. Your plan is now active.");
-          setErrorMessage(null);
-          setIsConfirming(false);
-          supabase.removeChannel(channel);
+      await fetchSubscription();
+      const latestPlanCode = useUserStore.getState().subscription?.plan?.code;
+      const matchesExpected = expectedPlanCode
+        ? latestPlanCode === expectedPlanCode
+        : paidPlans.includes(latestPlanCode as PlanCode);
+
+      if (matchesExpected) {
+        if (!isActive) {
+          return;
         }
-      )
-      .subscribe();
-
-    const timeoutId = setTimeout(() => {
-      if (isHandled) {
+        setSuccessMessage("Subscription confirmed. Your plan is now active.");
+        setErrorMessage(null);
+        setIsConfirming(false);
         return;
       }
-      isHandled = true;
-      setErrorMessage(
-        "We could not confirm the upgrade yet. Please refresh or contact support."
-      );
-      setIsConfirming(false);
-      supabase.removeChannel(channel);
-    }, 30000);
+
+      channel = supabase
+        .channel(`subscription:${tenant.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "subscriptions",
+            filter: `tenant_id=eq.${tenant.id}`,
+          },
+          async () => {
+            if (isHandled) {
+              return;
+            }
+            isHandled = true;
+            await fetchSubscription();
+            if (!isActive) {
+              return;
+            }
+            setSuccessMessage("Subscription confirmed. Your plan is now active.");
+            setErrorMessage(null);
+            setIsConfirming(false);
+            if (channel) {
+              supabase.removeChannel(channel);
+            }
+          }
+        )
+        .subscribe();
+
+      timeoutId = setTimeout(() => {
+        if (isHandled) {
+          return;
+        }
+        isHandled = true;
+        if (!isActive) {
+          return;
+        }
+        setErrorMessage(
+          "We could not confirm the upgrade yet. Please refresh or contact support."
+        );
+        setIsConfirming(false);
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      }, 30000);
+    };
+
+    confirmUpgrade();
 
     return () => {
-      clearTimeout(timeoutId);
-      supabase.removeChannel(channel);
+      isActive = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, [checkoutSuccess, tenant?.id, fetchSubscription]);
+  }, [checkoutSuccess, tenant?.id, fetchSubscription, expectedPlanCode]);
 
   useEffect(() => {
     if (!checkoutSuccess || !subscription?.plan?.code) {
       return;
     }
 
-    if (paidPlans.includes(subscription.plan.code)) {
+    const matchesExpected = expectedPlanCode
+      ? subscription.plan.code === expectedPlanCode
+      : paidPlans.includes(subscription.plan.code);
+
+    if (matchesExpected) {
       setSuccessMessage("Subscription confirmed. Your plan is now active.");
       setIsConfirming(false);
       setErrorMessage(null);
     }
-  }, [checkoutSuccess, subscription?.plan?.code]);
+  }, [checkoutSuccess, subscription?.plan?.code, expectedPlanCode]);
 
   const handleUpgrade = async (planCode: PlanCode) => {
     if (!paidPlans.includes(planCode)) {
