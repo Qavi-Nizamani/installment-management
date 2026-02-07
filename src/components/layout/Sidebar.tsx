@@ -17,7 +17,7 @@ import {
   // TrendingUp,
   // TrendingDown,
   // BarChart3,
-  // Settings,
+  Settings,
   // UserCheck,
   PiggyBank,
   Menu,
@@ -48,6 +48,17 @@ const navigation = [
     name: "Capital",
     href: "/dashboard/finance/capital",
     icon: PiggyBank,
+  },
+  {
+    name: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings,
+    children: [
+      {
+        name: "Subscription",
+        href: "/dashboard/settings/subscription",
+      },
+    ],
   },
   // {
   //   name: "Revenue",
@@ -112,15 +123,66 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1">
         {navigation.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            pathname === item.href ||
+            item.children?.some((child) => child.href === pathname);
           const Icon = item.icon;
 
-          const navItem = (
-            <Link
-              href={item.href}
-              key={item.name}
-              onClick={onNavigate}
-            >
+          const navItem = item.children ? (
+            <div key={item.name}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start relative",
+                  isExpanded ? "px-4" : "px-3",
+                  isActive && "bg-blue-50 text-blue-700 border-blue-200"
+                )}
+                onClick={onNavigate}
+              >
+                <Icon
+                  className={cn(
+                    "h-5 w-5 flex-shrink-0",
+                    isActive ? "text-blue-700" : "text-gray-500",
+                    isExpanded ? "mr-3" : "mr-0"
+                  )}
+                />
+                {isExpanded && (
+                  <span className="animate-in slide-in-from-left duration-200 truncate">
+                    {item.name}
+                  </span>
+                )}
+                {isActive && (
+                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-full" />
+                )}
+              </Button>
+              {isExpanded && (
+                <div className="mt-1 space-y-1 pl-10">
+                  {item.children.map((child) => {
+                    const isChildActive = pathname === child.href;
+                    return (
+                      <Link
+                        href={child.href}
+                        key={child.name}
+                        onClick={onNavigate}
+                      >
+                        <Button
+                          variant={isChildActive ? "secondary" : "ghost"}
+                          className={cn(
+                            "w-full justify-start text-sm",
+                            isChildActive &&
+                              "bg-blue-50 text-blue-700 border-blue-200"
+                          )}
+                        >
+                          <span className="truncate">{child.name}</span>
+                        </Button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link href={item.href} key={item.name} onClick={onNavigate}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
