@@ -18,6 +18,10 @@ export interface Subscription {
   status: SubscriptionStatus;
   current_period_start: string;
   current_period_end: string | null;
+  provider_subscription_id?: string | null;
+  provider_customer_id?: string | null;
+  provider_product_id?: string | null;
+  provider_variant_id?: string | null;
   created_at: string;
   updated_at: string;
 }
