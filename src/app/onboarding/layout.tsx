@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createClient } from "@/supabase/database/server";
 
 export default async function OnboardingLayout({
@@ -13,7 +12,7 @@ export default async function OnboardingLayout({
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   // Check if user already has a workspace

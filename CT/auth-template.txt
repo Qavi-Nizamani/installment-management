@@ -12,7 +12,7 @@ For UI we will be using Shadcn.
 - Shared UI inputs and buttons: `/src/components/shared/`
 - Shadcn components: `/src/components/ui/`
 - Backend logic: `/src/services/auth/<route>.ts`
-- Type definitions: `/src/types/auth/login.ts`
+- Type definitions: `/src/types/login.ts`
 - Supabase connectivity for client/server: `/src/supabase/database`
 
 Also use the following shared structure if needed:

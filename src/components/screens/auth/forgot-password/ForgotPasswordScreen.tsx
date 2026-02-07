@@ -123,7 +123,7 @@ export default function ForgotPasswordScreen() {
 
           <div className="mt-6 text-center text-sm">
             <Link 
-              href="/auth/login" 
+              href="/login" 
               className="text-blue-600 hover:text-blue-500 font-medium inline-flex items-center"
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
@@ -135,7 +135,7 @@ export default function ForgotPasswordScreen() {
             <div className="mt-4 text-center text-sm">
               <span className="text-gray-600">Don&apos;t have an account? </span>
               <Link 
-                href="/auth/signup" 
+                href="/signup" 
                 className="text-blue-600 hover:text-blue-500 font-medium"
               >
                 Sign up

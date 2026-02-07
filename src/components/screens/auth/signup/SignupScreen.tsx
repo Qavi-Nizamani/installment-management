@@ -43,7 +43,7 @@ export default function SignupScreen() {
         form.reset();
         // Redirect to login after a short delay—user must verify email first
         setTimeout(() => {
-          router.push("/auth/login?verified=check_email");
+          router.push("/login?verified=check_email");
         }, 2500);
       } else {
         setError(result.error || "Signup failed. Please try again.");
@@ -186,7 +186,7 @@ export default function SignupScreen() {
           <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Already have an account? </span>
             <Link 
-              href="/auth/login" 
+              href="/login" 
               className="text-blue-600 hover:text-blue-500 font-medium"
             >
               Sign in

@@ -11,13 +11,13 @@ export default function Home() {
         </div>
         <div className="flex items-center space-x-4">
           <a
-            href="/auth/login"
+            href="/login"
             className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
           >
             Login
           </a>
           <a
-            href="/auth/signup"
+            href="/signup"
             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-sm"
           >
             Sign Up
@@ -120,7 +120,7 @@ export default function Home() {
                 <div className="mt-auto text-center pt-6">
                   <div className="text-2xl font-bold text-gray-900 mb-3">PKR 0</div>
                   <a
-                    href="/auth/signup"
+                    href="/signup"
                     className="inline-flex items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                   >
                     Start Free
@@ -158,7 +158,7 @@ export default function Home() {
                 <div className="mt-auto text-center pt-6">
                   <div className="text-2xl font-bold text-gray-900 mb-3">PKR 2,500/mo</div>
                   <a
-                    href="/auth/signup"
+                    href="/signup"
                     className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
                   >
                     Choose Starter
@@ -196,7 +196,7 @@ export default function Home() {
                 <div className="mt-auto text-center pt-6">
                   <div className="text-2xl font-bold text-gray-900 mb-3">PKR 6,000/mo</div>
                   <a
-                    href="/auth/signup"
+                    href="/signup"
                     className="inline-flex items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                   >
                     Go Pro

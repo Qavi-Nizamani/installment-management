@@ -33,11 +33,11 @@ export default async function AuthErrorPage({ searchParams }: Props) {
           <p className="text-sm text-center text-gray-600">{message}</p>
           <div className="flex flex-col gap-3">
             <Button asChild className="w-full">
-              <Link href="/auth/login">Sign in</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <p className="text-center text-sm text-gray-600">
               Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-500 font-medium">
+              <Link href="/signup" className="text-blue-600 hover:text-blue-500 font-medium">
                 Sign up
               </Link>
             </p>

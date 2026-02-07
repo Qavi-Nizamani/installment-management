@@ -38,7 +38,7 @@ export default function LoginScreen() {
   useEffect(() => {
     if (searchParams.get("verified") === "check_email") {
       setSuccess("Check your email to verify your account, then sign in below.");
-      router.replace("/auth/login", { scroll: false });
+      router.replace("/login", { scroll: false });
     }
   }, [searchParams, router]);
   const form = useForm<LoginPayload>({
@@ -153,7 +153,7 @@ export default function LoginScreen() {
 
           <div className="mt-6 text-center text-sm">
             <Link
-              href="/auth/forgot-password"
+              href="/forgot-password"
               className="text-blue-600 hover:text-blue-500"
             >
               Forgot your password?
@@ -163,7 +163,7 @@ export default function LoginScreen() {
           <div className="mt-4 text-center text-sm">
             <span className="text-gray-600">Don&apos;t have an account? </span>
             <Link
-              href="/auth/signup"
+              href="/signup"
               className="text-blue-600 hover:text-blue-500 font-medium"
             >
               Sign up

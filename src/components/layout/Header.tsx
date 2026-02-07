@@ -31,7 +31,7 @@ export function Header() {
         
         if (result.success) {
           toast.success(result.message || "Successfully logged out");
-          router.push("/auth/login");
+          router.push("/login");
         } else {
           toast.error(result.error || "Failed to logout");
         }
