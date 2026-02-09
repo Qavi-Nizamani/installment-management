@@ -27,6 +27,7 @@ interface UserState {
   tenant: TenantSummary | null;
   subscription: SubscriptionWithPlan | null;
   isLoadingSubscription: boolean;
+  needsOnboarding: boolean;
   error: string | null;
 
   setUser: (user: AuthUser | null) => void;
@@ -44,6 +45,7 @@ const initialState = {
   tenant: null,
   subscription: null,
   isLoadingSubscription: true,
+  needsOnboarding: false,
   error: null,
 };
 
@@ -63,11 +65,13 @@ export const useUserStore = create<UserState>((set, get) => ({
         set({
           tenant: response.data.tenant,
           member: response.data.member,
+          needsOnboarding: false,
         });
       } else {
         set({
           tenant: null,
           member: null,
+          needsOnboarding: response.code === "NO_TENANT",
           error: response.error || "Failed to fetch tenant context",
         });
       }
@@ -75,6 +79,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       set({
         tenant: null,
         member: null,
+        needsOnboarding: false,
         error: "An unexpected error occurred",
       });
     }

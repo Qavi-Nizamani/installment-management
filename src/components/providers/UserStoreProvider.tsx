@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStore } from "@/store/user.store";
@@ -11,13 +12,21 @@ interface UserStoreProviderProps {
 
 export function UserStoreProvider({ children }: UserStoreProviderProps) {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const loadingHints = [
     "Checking your workspace setup",
     "Making sure everything is ready",
     "Almost there",
   ];
   const [loadingHintIndex, setLoadingHintIndex] = useState(0);
-  const { setUser, fetchSubscription, fetchTenantContext, reset, subscription, } = useUserStore();
+  const {
+    setUser,
+    fetchSubscription,
+    fetchTenantContext,
+    reset,
+    subscription,
+    needsOnboarding,
+  } = useUserStore();
 
   useEffect(() => {
     if (loading) return;
@@ -32,6 +41,11 @@ export function UserStoreProvider({ children }: UserStoreProviderProps) {
       reset();
     }
   }, [user, loading, setUser, fetchTenantContext, fetchSubscription, reset]);
+
+  useEffect(() => {
+    if (loading || !needsOnboarding) return;
+    router.replace("/onboarding/setup-workspace");
+  }, [loading, needsOnboarding, router]);
 
   useEffect(() => {
     if (subscription) return;

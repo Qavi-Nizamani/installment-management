@@ -29,9 +29,17 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse.cookies.set(name, "", options);
         },
       },
-    }
+    },
   );
 
+  const authRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/verify-email",
+    "/reset-password",
+    "/verify-email",
+  ];
   // Do not run code between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
@@ -46,37 +54,13 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
-  } else if (user && request.nextUrl.pathname.startsWith("/auth") && !request.nextUrl.pathname.startsWith("/auth/callback")) {
-    // User is authenticated, check if they have a tenant (allow /auth/callback for email verification)
-    const { data: existingMember } = await supabase
-      .from('members')
-      .select('tenant_id')
-      .eq('user_id', user.id)
-      .single();
+  } else if (user && authRoutes.includes(request.nextUrl.pathname)) {
+    // User is authenticated, check if they have a tenant
 
     const url = request.nextUrl.clone();
-    if (existingMember) {
-      // User has a tenant, redirect to dashboard
-      url.pathname = "/dashboard";
-    } else {
-      // User doesn't have a tenant, redirect to onboarding
-      url.pathname = "/onboarding/setup-workspace";
-    }
-    return NextResponse.redirect(url);
-  } else if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    // User is authenticated and trying to access dashboard, check if they have a tenant
-    const { data: existingMember } = await supabase
-      .from('members')
-      .select('tenant_id')
-      .eq('user_id', user.id)
-      .single();
+    url.pathname = "/dashboard";
 
-    if (!existingMember) {
-      // User doesn't have a tenant, redirect to onboarding
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding/setup-workspace";
-      return NextResponse.redirect(url);
-    }
+    return NextResponse.redirect(url);
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

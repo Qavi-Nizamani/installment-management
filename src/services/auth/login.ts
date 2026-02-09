@@ -12,9 +12,17 @@ export async function login(data: LoginPayload): Promise<LoginResponse> {
     });
 
     if (error) {
+      const message = error.message;
+      const normalized = message.toLowerCase();
+      const isEmailUnconfirmed =
+        normalized.includes("email not confirmed") ||
+        normalized.includes("confirm your email") ||
+        normalized.includes("confirm your account");
+
       return {
         success: false,
-        error: error.message,
+        error: message,
+        errorCode: isEmailUnconfirmed ? "email_not_confirmed" : undefined,
       };
     }
 

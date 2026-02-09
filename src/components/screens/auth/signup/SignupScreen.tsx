@@ -41,9 +41,10 @@ export default function SignupScreen() {
         setSuccess(result.message || "Account created successfully!");
         setIsSignupComplete(true);
         form.reset();
-        // Redirect to login after a short delay—user must verify email first
+        // Redirect to email verification after a short delay
         setTimeout(() => {
-          router.push("/login?verified=check_email");
+          const encodedEmail = encodeURIComponent(data.email);
+          router.push(`/email/verify?email=${encodedEmail}&reason=signup`);
         }, 2500);
       } else {
         setError(result.error || "Signup failed. Please try again.");

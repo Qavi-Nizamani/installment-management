@@ -12,6 +12,7 @@ export interface LoginResponse {
   success: boolean;
   message?: string;
   error?: string;
+  errorCode?: string;
 }
 
 // Signup Types (for future use)
@@ -32,3 +33,10 @@ export const ForgotPasswordSchema = z.object({
 });
 
 export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordSchema>; 
+
+// Email Verification Types
+export const EmailVerifySchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+export type EmailVerifyPayload = z.infer<typeof EmailVerifySchema>;

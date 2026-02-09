@@ -56,9 +56,16 @@ export default function LoginScreen() {
       const result = await login(data);
       if (result.success) {
         router.push("/dashboard");
-      } else {
-        setError(result.error || "Login failed. Please try again.");
+        return;
       }
+
+      if (result.errorCode === "email_not_confirmed") {
+        const encodedEmail = encodeURIComponent(data.email);
+        router.push(`/email/verify?email=${encodedEmail}&reason=unconfirmed`);
+        return;
+      }
+
+      setError(result.error || "Login failed. Please try again.");
     });
   };
 

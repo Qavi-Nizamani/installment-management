@@ -21,6 +21,7 @@ interface ServiceResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: "AUTH_REQUIRED" | "NO_TENANT" | "UNKNOWN";
 }
 
 export async function getTenantContextSummary(): Promise<
@@ -34,7 +35,7 @@ export async function getTenantContextSummary(): Promise<
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return { success: false, error: "Authentication required." };
+      return { success: false, error: "Authentication required.", code: "AUTH_REQUIRED" };
     }
 
     const { data: member, error } = await supabase
@@ -47,6 +48,7 @@ export async function getTenantContextSummary(): Promise<
       return {
         success: false,
         error: "No tenant membership found for this user.",
+        code: "NO_TENANT",
       };
     }
 
@@ -65,6 +67,6 @@ export async function getTenantContextSummary(): Promise<
     };
   } catch (error) {
     console.error("Error fetching tenant context summary:", error);
-    return { success: false, error: "Failed to fetch tenant context." };
+    return { success: false, error: "Failed to fetch tenant context.", code: "UNKNOWN" };
   }
 }
