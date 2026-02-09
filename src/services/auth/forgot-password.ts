@@ -8,7 +8,7 @@ export async function forgotPassword(data: ForgotPasswordPayload): Promise<Login
 
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/auth/reset-password`,
     });
 
     if (error) {
