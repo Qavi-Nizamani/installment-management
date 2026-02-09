@@ -38,7 +38,6 @@ export async function updateSession(request: NextRequest) {
     "/forgot-password",
     "/verify-email",
     "/reset-password",
-    "/verify-email",
   ];
   // Do not run code between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug

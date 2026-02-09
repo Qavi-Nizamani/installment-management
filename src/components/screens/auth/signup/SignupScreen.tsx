@@ -44,7 +44,7 @@ export default function SignupScreen() {
         // Redirect to email verification after a short delay
         setTimeout(() => {
           const encodedEmail = encodeURIComponent(data.email);
-          router.push(`/email/verify?email=${encodedEmail}&reason=signup`);
+          router.push(`/verify-email?email=${encodedEmail}&reason=signup`);
         }, 2500);
       } else {
         setError(result.error || "Signup failed. Please try again.");

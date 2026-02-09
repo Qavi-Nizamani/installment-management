@@ -61,7 +61,7 @@ export default function LoginScreen() {
 
       if (result.errorCode === "email_not_confirmed") {
         const encodedEmail = encodeURIComponent(data.email);
-        router.push(`/email/verify?email=${encodedEmail}&reason=unconfirmed`);
+        router.push(`/verify-email?email=${encodedEmail}&reason=unconfirmed`);
         return;
       }
 
