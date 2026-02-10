@@ -3,9 +3,18 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE UNIQUE,
     plan_id UUID REFERENCES plans(id) ON DELETE RESTRICT,
-    status TEXT NOT NULL CHECK (status IN ('active', 'past_due', 'canceled')),
+    status TEXT NOT NULL CHECK (status IN ('trialing', 'active', 'past_due', 'canceled', 'expired')),
+    provider TEXT NOT NULL CHECK (provider IN ('LEMON_SQUEEZY', 'STRIPE')),
+    provider_subscription_id TEXT,
+    provider_customer_id TEXT,
+    provider_product_id TEXT,
+    provider_variant_id TEXT,
     current_period_start TIMESTAMPTZ DEFAULT now(),
     current_period_end TIMESTAMPTZ,
+    trial_start TIMESTAMPTZ,
+    trial_end TIMESTAMPTZ,
+    canceled_at TIMESTAMPTZ,
+    expired_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -25,39 +34,6 @@ CREATE POLICY "subscriptions_select_policy" ON subscriptions
             SELECT 1 FROM members m
             WHERE m.user_id = (SELECT auth.uid())
             AND m.tenant_id = subscriptions.tenant_id
-        )
-    );
-
-CREATE POLICY "subscriptions_insert_policy" ON subscriptions
-    FOR INSERT
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.user_id = (SELECT auth.uid())
-            AND m.tenant_id = subscriptions.tenant_id
-            AND m.role = 'OWNER'
-        )
-    );
-
-CREATE POLICY "subscriptions_update_policy" ON subscriptions
-    FOR UPDATE
-    USING (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.user_id = (SELECT auth.uid())
-            AND m.tenant_id = subscriptions.tenant_id
-            AND m.role = 'OWNER'
-        )
-    );
-
-CREATE POLICY "subscriptions_delete_policy" ON subscriptions
-    FOR DELETE
-    USING (
-        EXISTS (
-            SELECT 1 FROM members m
-            WHERE m.user_id = (SELECT auth.uid())
-            AND m.tenant_id = subscriptions.tenant_id
-            AND m.role = 'OWNER'
         )
     );
 
