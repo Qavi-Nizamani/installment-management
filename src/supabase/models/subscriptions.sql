@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE UNIQUE,
     plan_id UUID REFERENCES plans(id) ON DELETE RESTRICT,
     status TEXT NOT NULL CHECK (status IN ('trialing', 'active', 'past_due', 'canceled', 'expired')),
-    provider TEXT NOT NULL CHECK (provider IN ('LEMON_SQUEEZY', 'STRIPE')),
+    provider TEXT NOT NULL DEFAULT 'LEMON_SQUEEZY',
     provider_subscription_id TEXT,
     provider_customer_id TEXT,
     provider_product_id TEXT,
