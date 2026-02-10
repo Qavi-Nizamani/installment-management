@@ -57,8 +57,15 @@ const mapStatus = (status?: string): SubscriptionStatus => {
   }
 };
 
-const verifySignature = (payload: string, signature: string, secret: string) => {
-  const digest = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+const verifySignature = (
+  payload: string,
+  signature: string,
+  secret: string,
+) => {
+  const digest = crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("hex");
   const digestBuffer = Buffer.from(digest, "utf8");
   const signatureBuffer = Buffer.from(signature, "utf8");
 
@@ -74,7 +81,7 @@ export async function POST(request: Request) {
   if (!secret) {
     return NextResponse.json(
       { error: "LEMON_WEBHOOK_SECRET is not set." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -89,7 +96,10 @@ export async function POST(request: Request) {
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid JSON payload." },
+      { status: 400 },
+    );
   }
 
   const eventName = payload?.meta?.event_name;
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
   if (webhookEventError) {
     return NextResponse.json(
       { error: webhookEventError.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -180,6 +190,21 @@ export async function POST(request: Request) {
     provider_variant_id: attributes.variant_id?.toString() || null,
   };
 
+  // Clear lifecycle timestamps when subscription becomes active again
+  const mappedStatus = mapStatus(attributes.status);
+  const isActiveAgain =
+    eventName === "subscription_resumed" ||
+    eventName === "subscription_unpaused" ||
+    (eventName === "subscription_created" &&
+      ["active", "trialing", "past_due"].includes(mappedStatus)) ||
+    (eventName === "subscription_updated" &&
+      ["active", "trialing", "past_due"].includes(mappedStatus));
+
+  if (isActiveAgain) {
+    updatePayload.canceled_at = null;
+    updatePayload.expired_at = null;
+  }
+
   // Lifecycle timestamps for cancellations and expirations
   if (eventName === "subscription_cancelled") {
     updatePayload.canceled_at = attributes.ends_at || new Date().toISOString();
@@ -205,7 +230,10 @@ export async function POST(request: Request) {
   }
 
   // If no existing row was updated, insert a new subscription record
-  if (!updatedRows || (Array.isArray(updatedRows) && updatedRows.length === 0)) {
+  if (
+    !updatedRows ||
+    (Array.isArray(updatedRows) && updatedRows.length === 0)
+  ) {
     const insertPayload: Record<string, unknown> = {
       tenant_id: tenantId,
       provider: "LEMON_SQUEEZY",
