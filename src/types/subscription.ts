@@ -26,6 +26,8 @@ export interface Subscription {
   status: SubscriptionStatus;
   current_period_start: string;
   current_period_end: string | null;
+  trial_start: string | null;
+  trial_end: string | null;
   provider: "LEMON_SQUEEZY";
   provider_subscription_id?: string | null;
   provider_customer_id?: string | null;

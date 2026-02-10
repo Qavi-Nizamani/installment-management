@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/supabase/database/server";
+import { createAdminClient } from "@/supabase/database/admin";
 import { withTenantFilter } from "@/guards/tenant.guard";
 import type { SubscriptionWithPlan } from "@/types/subscription";
 
@@ -26,9 +27,9 @@ export async function getCurrentSubscription(
 
     const { data, error } = await withTenantFilter(
       supabase
-      .from("subscriptions")
-      .select("*, plan:plans(*)")
-      .single(),
+        .from("subscriptions")
+        .select("*, plan:plans(*)")
+        .single(),
       resolvedTenantId
     );
 
@@ -39,7 +40,24 @@ export async function getCurrentSubscription(
       };
     }
 
-    return { success: true, data: data as SubscriptionWithPlan };
+    const subscription = data as SubscriptionWithPlan;
+
+    // Lazy-expire app-managed trial when now > trial_end
+    if (
+      subscription.status === "trialing" &&
+      subscription.trial_end &&
+      new Date() > new Date(subscription.trial_end)
+    ) {
+      const admin = createAdminClient();
+      await admin
+        .from("subscriptions")
+        .update({ status: "expired" })
+        .eq("id", subscription.id);
+
+      subscription.status = "expired";
+    }
+
+    return { success: true, data: subscription };
   } catch (error) {
     console.error("Error fetching subscription:", error);
     return { success: false, error: "Failed to fetch subscription." };

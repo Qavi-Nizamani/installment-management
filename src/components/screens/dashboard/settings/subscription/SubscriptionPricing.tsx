@@ -25,6 +25,7 @@ export default function SubscriptionPricing() {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const checkoutSuccess = searchParams.get("checkout") === "success";
+  const trialExpired = searchParams.get("trial_expired") === "1";
   const expectedPlanCode = searchParams.get("plan_code") as PlanCode | null;
 
   useEffect(() => {
@@ -174,6 +175,13 @@ export default function SubscriptionPricing() {
 
   return (
     <div className="mt-8 mb-16 max-w-5xl mx-auto">
+      {trialExpired && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center">
+          <p className="text-amber-800 font-medium">
+            Your trial has ended. Upgrade to a paid plan to continue using the app.
+          </p>
+        </div>
+      )}
       <div className="text-center mb-10">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
           Pricing Tiers
