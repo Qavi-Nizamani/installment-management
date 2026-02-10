@@ -4,6 +4,26 @@ import { createAdminClient } from "@/supabase/database/admin";
 import { getPlanCodeFromProductId } from "@/services/billing/lemon-squeezy";
 import type { PlanCode, SubscriptionStatus } from "@/types/subscription";
 
+type LemonWebhookPayload = {
+  meta?: {
+    event_name?: string;
+    custom_data?: Record<string, unknown>;
+  };
+  data?: {
+    id?: string | number;
+    attributes?: {
+      status?: string;
+      product_id?: string | number;
+      customer_id?: string | number;
+      variant_id?: string | number;
+      created_at?: string;
+      renews_at?: string | null;
+      ends_at?: string | null;
+      updated_at?: string;
+    } & Record<string, unknown>;
+  };
+};
+
 const relevantEvents = new Set([
   "subscription_created",
   "subscription_updated",
@@ -20,16 +40,18 @@ const relevantEvents = new Set([
 
 const mapStatus = (status?: string): SubscriptionStatus => {
   switch (status) {
-    case "active":
     case "on_trial":
+      return "trialing";
+    case "active":
     case "paused":
       return "active";
     case "past_due":
     case "unpaid":
       return "past_due";
     case "cancelled":
-    case "expired":
       return "canceled";
+    case "expired":
+      return "expired";
     default:
       return "active";
   }
@@ -63,27 +85,61 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  let payload: any;
+  let payload: LemonWebhookPayload;
   try {
     payload = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const eventName = payload?.meta?.event_name as string | undefined;
+  const eventName = payload?.meta?.event_name;
   if (!eventName || !relevantEvents.has(eventName)) {
     return NextResponse.json({ received: true });
   }
 
   const subscriptionData = payload?.data;
   const attributes = subscriptionData?.attributes || {};
-  const customData = payload?.meta?.custom_data || {};
+  const customData = (payload?.meta?.custom_data || {}) as {
+    tenant_id?: string | number;
+    plan_code?: PlanCode;
+  };
   const providerSubscriptionId = subscriptionData?.id?.toString();
+
+  const providerResourceId = providerSubscriptionId;
+  const syntheticEventIdParts = [
+    eventName || "unknown",
+    providerResourceId || "no-resource-id",
+    attributes.updated_at ||
+      attributes.renews_at ||
+      attributes.created_at ||
+      new Date().toISOString(),
+  ];
+  const webhookEventId = syntheticEventIdParts.join(":");
 
   const admin = createAdminClient();
 
-  let tenantId = customData?.tenant_id?.toString();
-  let planCode: PlanCode | null = customData?.plan_code || null;
+  // Idempotency: log the webhook event and short-circuit if we've seen it before
+  const { error: webhookEventError } = await admin
+    .from("billing_webhook_events")
+    .insert({
+      id: webhookEventId,
+      event_type: eventName,
+    });
+
+  // 23505 = unique_violation (duplicate primary key)
+  if (webhookEventError?.code === "23505") {
+    return NextResponse.json({ received: true });
+  }
+
+  if (webhookEventError) {
+    return NextResponse.json(
+      { error: webhookEventError.message },
+      { status: 500 }
+    );
+  }
+
+  let tenantId = customData.tenant_id?.toString();
+  let planCode: PlanCode | null = customData.plan_code ?? null;
 
   if (!planCode) {
     planCode = getPlanCodeFromProductId(attributes.product_id);
@@ -114,6 +170,7 @@ export async function POST(request: Request) {
   }
 
   const updatePayload: Record<string, unknown> = {
+    provider: "LEMON_SQUEEZY",
     status: mapStatus(attributes.status),
     current_period_start: attributes.created_at || null,
     current_period_end: attributes.renews_at || attributes.ends_at || null,
@@ -123,17 +180,55 @@ export async function POST(request: Request) {
     provider_variant_id: attributes.variant_id?.toString() || null,
   };
 
+  // Lifecycle timestamps for cancellations and expirations
+  if (eventName === "subscription_cancelled") {
+    updatePayload.canceled_at = attributes.ends_at || new Date().toISOString();
+  }
+
+  if (eventName === "subscription_expired") {
+    updatePayload.expired_at = attributes.ends_at || new Date().toISOString();
+  }
+
   if (planId) {
     updatePayload.plan_id = planId;
   }
 
-  const { error } = await admin
+  // First try to update an existing subscription for this tenant
+  const { data: updatedRows, error: updateError } = await admin
     .from("subscriptions")
     .update(updatePayload)
-    .eq("tenant_id", tenantId);
+    .eq("tenant_id", tenantId)
+    .select("id");
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  // If no existing row was updated, insert a new subscription record
+  if (!updatedRows || (Array.isArray(updatedRows) && updatedRows.length === 0)) {
+    const insertPayload: Record<string, unknown> = {
+      tenant_id: tenantId,
+      provider: "LEMON_SQUEEZY",
+      status: updatePayload.status,
+      current_period_start: updatePayload.current_period_start,
+      current_period_end: updatePayload.current_period_end,
+      provider_subscription_id: updatePayload.provider_subscription_id,
+      provider_customer_id: updatePayload.provider_customer_id,
+      provider_product_id: updatePayload.provider_product_id,
+      provider_variant_id: updatePayload.provider_variant_id,
+    };
+
+    if (planId) {
+      insertPayload.plan_id = planId;
+    }
+
+    const { error: insertError } = await admin
+      .from("subscriptions")
+      .insert(insertPayload);
+
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ received: true });

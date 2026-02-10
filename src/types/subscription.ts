@@ -1,6 +1,11 @@
 export type PlanCode = "FREE" | "STARTER" | "PRO";
 
-export type SubscriptionStatus = "active" | "past_due" | "canceled";
+export type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "expired";
 
 export interface Plan {
   id: string;
