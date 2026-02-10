@@ -39,4 +39,5 @@ export interface Subscription {
 
 export interface SubscriptionWithPlan extends Subscription {
   plan?: Plan | null;
+  isTrialExpired?: boolean;
 }

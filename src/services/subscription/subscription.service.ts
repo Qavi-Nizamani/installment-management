@@ -57,6 +57,9 @@ export async function getCurrentSubscription(
       subscription.status = "expired";
     }
 
+    subscription.isTrialExpired =
+      subscription.status === "expired" && !subscription.provider_subscription_id;
+
     return { success: true, data: subscription };
   } catch (error) {
     console.error("Error fetching subscription:", error);

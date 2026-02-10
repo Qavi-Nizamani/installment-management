@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStore } from "@/store/user.store";
@@ -10,12 +10,9 @@ interface UserStoreProviderProps {
   children: React.ReactNode;
 }
 
-const SUBSCRIPTION_UPGRADE_PATH = "/dashboard/settings/subscription";
-
 export function UserStoreProvider({ children }: UserStoreProviderProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const loadingHints = [
     "Checking your workspace setup",
     "Making sure everything is ready",
@@ -49,16 +46,6 @@ export function UserStoreProvider({ children }: UserStoreProviderProps) {
     if (loading || !needsOnboarding) return;
     router.replace("/onboarding/setup-workspace");
   }, [loading, needsOnboarding, router]);
-
-  const isTrialExpired =
-    subscription?.status === "expired" && !subscription?.provider_subscription_id;
-  const isOnUpgradePage = pathname?.startsWith(SUBSCRIPTION_UPGRADE_PATH);
-
-  useEffect(() => {
-    if (isTrialExpired && !isOnUpgradePage) {
-      router.replace(`${SUBSCRIPTION_UPGRADE_PATH}?trial_expired=1`);
-    }
-  }, [isTrialExpired, isOnUpgradePage, router]);
 
   useEffect(() => {
     if (subscription) return;
