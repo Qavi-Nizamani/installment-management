@@ -18,7 +18,7 @@ export interface Customer {
 // Extended customer with calculated fields
 export interface CustomerWithStats extends Customer {
   active_plans: number;
-  status: 'Active' | 'Inactive';
+  status: "Active" | "Inactive";
 }
 
 export interface CreateCustomerPayload {
@@ -71,25 +71,25 @@ const requireTenantId = (tenantId?: string): string => {
  * Get all customers for the authenticated user's tenant
  */
 export async function getCustomers(
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<Customer[]>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
-      .from('customers')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("customers")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     // Apply tenant filter for security
     const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
-      console.error('Error fetching customers:', error);
+      console.error("Error fetching customers:", error);
       return {
         success: false,
-        error: 'Failed to fetch customers. Please try again.',
+        error: "Failed to fetch customers. Please try again.",
       };
     }
 
@@ -98,10 +98,10 @@ export async function getCustomers(
       data: data || [],
     };
   } catch (error) {
-    console.error('Error in getCustomers:', error);
+    console.error("Error in getCustomers:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -110,7 +110,7 @@ export async function getCustomers(
  * Get all customers with calculated stats (active plans, total spent)
  */
 export async function getCustomersWithStats(
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<CustomerWithStats[]>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
@@ -118,8 +118,9 @@ export async function getCustomersWithStats(
 
     // Get customers with their installment plans data
     const query = supabase
-      .from('customers')
-      .select(`
+      .from("customers")
+      .select(
+        `
         *,
         installment_plans (
           id,
@@ -132,57 +133,61 @@ export async function getCustomersWithStats(
           business_model,
           created_at
         )
-      `)
-      .order('created_at', { ascending: false });
+      `,
+      )
+      .order("created_at", { ascending: false });
 
     // Apply tenant filter for security
     const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
-      console.error('Error fetching customers with stats:', error);
+      console.error("Error fetching customers with stats:", error);
       return {
         success: false,
-        error: 'Failed to fetch customers. Please try again.',
+        error: "Failed to fetch customers. Please try again.",
       };
     }
 
     // Calculate stats for each customer
-    const customersWithStats: CustomerWithStats[] = (data || []).map((customer: CustomerWithPlans) => {
-      const plans = customer.installment_plans || [];
-      
-      // Calculate active plans (plans that haven't been completed)
-      // A plan is considered active if it's within the payment period
-      const now = new Date();
-      const activePlans = plans.filter((plan: InstallmentPlanInfo) => {
-        const startDate = new Date(plan.start_date);
-        const endDate = new Date(startDate);
-        endDate.setMonth(endDate.getMonth() + plan.total_months);
-        return now <= endDate;
-      }).length;
-      
-      // Determine status (active if has active plans, inactive otherwise)
-      const status: 'Active' | 'Inactive' = activePlans > 0 ? 'Active' : 'Inactive';
+    const customersWithStats: CustomerWithStats[] = (data || []).map(
+      (customer: CustomerWithPlans) => {
+        const plans = customer.installment_plans || [];
 
-      // Remove the nested installment_plans to avoid confusion
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { installment_plans, ...customerData } = customer;
+        // Calculate active plans (plans that haven't been completed)
+        // A plan is considered active if it's within the payment period
+        const now = new Date();
+        const activePlans = plans.filter((plan: InstallmentPlanInfo) => {
+          const startDate = new Date(plan.start_date);
+          const endDate = new Date(startDate);
+          endDate.setMonth(endDate.getMonth() + plan.total_months);
+          return now <= endDate;
+        }).length;
 
-      return {
-        ...customerData,
-        active_plans: activePlans,
-        status
-      };
-    });
+        // Determine status (active if has active plans, inactive otherwise)
+        const status: "Active" | "Inactive" =
+          activePlans > 0 ? "Active" : "Inactive";
+
+        // Remove the nested installment_plans to avoid confusion
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { installment_plans, ...customerData } = customer;
+
+        return {
+          ...customerData,
+          active_plans: activePlans,
+          status,
+        };
+      },
+    );
 
     return {
       success: true,
       data: customersWithStats,
     };
   } catch (error) {
-    console.error('Error in getCustomersWithStats:', error);
+    console.error("Error in getCustomersWithStats:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -192,25 +197,21 @@ export async function getCustomersWithStats(
  */
 export async function getCustomerById(
   id: string,
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<Customer>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
-    const query = supabase
-      .from('customers')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const query = supabase.from("customers").select("*").eq("id", id).single();
 
     const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
-      console.error('Error fetching customer:', error);
+      console.error("Error fetching customer:", error);
       return {
         success: false,
-        error: 'Failed to fetch customer. Please try again.',
+        error: "Failed to fetch customer. Please try again.",
       };
     }
 
@@ -219,10 +220,10 @@ export async function getCustomerById(
       data,
     };
   } catch (error) {
-    console.error('Error in getCustomerById:', error);
+    console.error("Error in getCustomerById:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -232,14 +233,26 @@ export async function getCustomerById(
  */
 export async function createCustomer(
   payload: CreateCustomerPayload,
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<Customer>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
+    // If not active/trialing subscription prevent creating customers
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("tenant_id", resolvedTenantId)
+      .or("status.eq.active,status.eq.trialing")
+      .maybeSingle();
+
+    if (!subscription || subscriptionError) {
+      throw new Error(subscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION");
+    }
+
     const { data, error } = await supabase
-      .from('customers')
+      .from("customers")
       .insert({
         tenant_id: resolvedTenantId, // Ensure customer belongs to user's tenant
         name: payload.name,
@@ -251,10 +264,10 @@ export async function createCustomer(
       .single();
 
     if (error) {
-      console.error('Error creating customer:', error);
+      console.error("Error creating customer:", error);
       return {
         success: false,
-        error: 'Failed to create customer. Please try again.',
+        error: error?.message || "Failed to create customer. Please try again.",
       };
     }
 
@@ -263,10 +276,12 @@ export async function createCustomer(
       data,
     };
   } catch (error) {
-    console.error('Error in createCustomer:', error);
+    console.error("Error in createCustomer:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error:
+        (error as Error)?.message ||
+        "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -275,31 +290,31 @@ export async function createCustomer(
  * Update customer (with tenant security)
  */
 export async function updateCustomer(
-  id: string, 
+  id: string,
   payload: UpdateCustomerPayload,
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<Customer>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
-      .from('customers')
+      .from("customers")
       .update({
         ...payload,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
-      console.error('Error updating customer:', error);
+      console.error("Error updating customer:", error);
       return {
         success: false,
-        error: 'Failed to update customer. Please try again.',
+        error: "Failed to update customer. Please try again.",
       };
     }
 
@@ -308,10 +323,10 @@ export async function updateCustomer(
       data,
     };
   } catch (error) {
-    console.error('Error in updateCustomer:', error);
+    console.error("Error in updateCustomer:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -321,35 +336,32 @@ export async function updateCustomer(
  */
 export async function deleteCustomer(
   id: string,
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<void>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
-    const query = supabase
-      .from('customers')
-      .delete()
-      .eq('id', id);
+    const query = supabase.from("customers").delete().eq("id", id);
 
     const { error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
-      console.error('Error deleting customer:', error);
+      console.error("Error deleting customer:", error);
       return {
         success: false,
-        error: 'Failed to delete customer. Please try again.',
+        error: "Failed to delete customer. Please try again.",
       };
     }
 
-    return { 
-      success: true 
+    return {
+      success: true,
     };
   } catch (error) {
-    console.error('Error in deleteCustomer:', error);
+    console.error("Error in deleteCustomer:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -359,7 +371,7 @@ export async function deleteCustomer(
  */
 export async function searchCustomers(
   searchTerm: string,
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<Customer[]>> {
   if (!searchTerm.trim()) {
     return getCustomers(tenantId);
@@ -370,18 +382,20 @@ export async function searchCustomers(
     const supabase = await createClient();
 
     const query = supabase
-      .from('customers')
-      .select('*')
-      .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,national_id.ilike.%${searchTerm}%`)
-      .order('created_at', { ascending: false });
+      .from("customers")
+      .select("*")
+      .or(
+        `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,national_id.ilike.%${searchTerm}%`,
+      )
+      .order("created_at", { ascending: false });
 
     const { data, error } = await withTenantFilter(query, resolvedTenantId);
 
     if (error) {
-      console.error('Error searching customers:', error);
+      console.error("Error searching customers:", error);
       return {
         success: false,
-        error: 'Failed to search customers. Please try again.',
+        error: "Failed to search customers. Please try again.",
       };
     }
 
@@ -390,10 +404,10 @@ export async function searchCustomers(
       data: data || [],
     };
   } catch (error) {
-    console.error('Error in searchCustomers:', error);
+    console.error("Error in searchCustomers:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -402,23 +416,24 @@ export async function searchCustomers(
  * Get customer statistics (with tenant security)
  */
 export async function getCustomerStats(
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<CustomerStats>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
-    const query = supabase
-      .from('customers')
-      .select('*');
+    const query = supabase.from("customers").select("*");
 
-    const { data: customers, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data: customers, error } = await withTenantFilter(
+      query,
+      resolvedTenantId,
+    );
 
     if (error) {
-      console.error('Error fetching customer stats:', error);
+      console.error("Error fetching customer stats:", error);
       return {
         success: false,
-        error: 'Failed to fetch customer statistics.',
+        error: "Failed to fetch customer statistics.",
       };
     }
 
@@ -434,10 +449,10 @@ export async function getCustomerStats(
       data: stats,
     };
   } catch (error) {
-    console.error('Error in getCustomerStats:', error);
+    console.error("Error in getCustomerStats:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
-} 
+}

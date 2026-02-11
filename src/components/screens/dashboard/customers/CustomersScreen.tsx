@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Plus, 
   Search, 
   Loader2,
-  AlertCircle
 } from "lucide-react";
 import { useCustomersStore } from "@/store/customers.store";
 import CustomerStatsCards from "./CustomerStatsCards";
@@ -21,13 +19,11 @@ export default function CustomersScreen() {
     stats,
     isLoading,
     isSearching,
-    error,
     searchTerm,
     fetchCustomers,
     fetchCustomerStats,
     searchCustomersAction,
     setSearchTerm,
-    clearError
   } = useCustomersStore();
 
   const [localSearchTerm, setLocalSearchTerm] = useState("");
@@ -66,19 +62,6 @@ export default function CustomersScreen() {
           Add Customer
         </Button>
       </div>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            {error}
-            <Button variant="outline" size="sm" onClick={clearError}>
-              Dismiss
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Stats Cards */}
       <CustomerStatsCards 

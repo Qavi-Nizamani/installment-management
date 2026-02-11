@@ -19,6 +19,7 @@ import { Loader2, UserPlus } from "lucide-react";
 import { CreateCustomerPayload } from "@/services/customers/customers.service";
 import { useCustomersStore } from "@/store/customers.store";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const CustomerSchema = z.object({
   name: z.string()
@@ -52,7 +53,7 @@ interface AddCustomerModalProps {
 
 export default function AddCustomerModal({ open, onOpenChange }: AddCustomerModalProps) {
   const [isPending, startTransition] = useTransition();
-  const { createNewCustomer, fetchCustomers, fetchCustomerStats } = useCustomersStore();
+  const { error, createNewCustomer, fetchCustomers, fetchCustomerStats } = useCustomersStore();
 
   const form = useForm<CreateCustomerPayload>({
     resolver: zodResolver(CustomerSchema),
@@ -68,21 +69,18 @@ export default function AddCustomerModal({ open, onOpenChange }: AddCustomerModa
     startTransition(async () => {
       try {
         const success = await createNewCustomer(data);
-        
+
         if (success) {
           toast.success("Customer created successfully!");
           form.reset();
           onOpenChange(false);
-          
+
           // Refresh data
           await fetchCustomers();
           await fetchCustomerStats();
-        } else {
-          toast.error("Failed to create customer. Please try again.");
         }
-      } catch (error) {
+      } catch {
         toast.error("An unexpected error occurred. Please try again.");
-        console.error("Error creating customer:", error);
       }
     });
   };
@@ -182,6 +180,13 @@ export default function AddCustomerModal({ open, onOpenChange }: AddCustomerModa
                 </FormItem>
               )}
             />
+
+
+            {error && (
+              <div className={cn("bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm", error.includes('PLAN_LIMIT_EXCEEDED') ? 'bg-green-50 border-green-200 text-green-600 font-medium' : '')}>
+                {error.includes('NO_ACTIVE_SUBSCRIPTION') ? "You don't have an active subscription. Please subscribe to create customers." : error}
+              </div>
+            )}
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button
