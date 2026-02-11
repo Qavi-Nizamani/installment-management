@@ -459,7 +459,7 @@ export function CreatePlanModal({ isOpen, onClose, onPlanCreated }: CreatePlanMo
 
           {errors.general && (
             <div className={cn("bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm", errors.general.includes('PLAN_LIMIT_EXCEEDED') ? 'bg-green-50 border-green-200 text-green-600 font-medium' : '')}>
-              {errors.general.includes('PLAN_LIMIT_EXCEEDED') ? "You''ve reached the active plan limit for your subscription. Upgrade to create more plans and keep the momentum going." : errors.general}
+              {errors.general.includes('PLAN_LIMIT_EXCEEDED') ? "You''ve reached the active plan limit for your subscription. Upgrade to create more plans and keep the momentum going." : errors.general.includes('NO_ACTIVE_SUBSCRIPTION')? "You don't have an active subscription. Please subscribe to create installment plans." : errors.general}
             </div>
           )}
 

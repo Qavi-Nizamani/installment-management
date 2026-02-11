@@ -41,7 +41,8 @@ BEGIN
   JOIN plans p ON p.id = s.plan_id
   WHERE s.tenant_id = p_tenant_id
     AND s.status = 'active'
-  LIMIT 1;
+    OR s.status = 'trialing'
+  LIMIT 1;  
 
   IF NOT FOUND THEN
     RAISE EXCEPTION

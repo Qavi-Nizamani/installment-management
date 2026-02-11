@@ -5,6 +5,19 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/supabase/database/client";
 import { useUserStore } from "@/store/user.store";
 import type { PlanCode } from "@/types/subscription";
+import { getActiveAndOverduePlanCount } from "@/services/subscription/check-downgrade";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 const paidPlans: PlanCode[] = ["STARTER", "PRO"];
 
@@ -12,6 +25,12 @@ const planLabels: Record<PlanCode, string> = {
   FREE: "Free",
   STARTER: "Starter",
   PRO: "Pro",
+};
+
+const planLimits: Record<PlanCode, { installmentPlanLimit: number | null }> = {
+  FREE: { installmentPlanLimit: 10 },
+  STARTER: { installmentPlanLimit: 100 },
+  PRO: { installmentPlanLimit: null }, // unlimited
 };
 
 export default function SubscriptionPricing() {
@@ -23,6 +42,9 @@ export default function SubscriptionPricing() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [showDowngradeDialog, setShowDowngradeDialog] = useState(false);
+  const [pendingPlanCode, setPendingPlanCode] = useState<PlanCode | null>(null);
+  const [downgradeWarning, setDowngradeWarning] = useState<string | null>(null);
 
   const checkoutSuccess = searchParams.get("checkout") === "success";
   const trialExpired = searchParams.get("trial_expired") === "1";
@@ -136,6 +158,59 @@ export default function SubscriptionPricing() {
     }
   }, [checkoutSuccess, subscription?.plan?.code, expectedPlanCode]);
 
+  const handlePlanClick = async (planCode: PlanCode) => {
+    setErrorMessage(null);
+    setDowngradeWarning(null);
+
+    // Check if it's a downgrade
+    const currentPlan = subscription?.plan?.code;
+    if (!currentPlan) return;
+
+    const planOrder: Record<PlanCode, number> = {
+      FREE: 0,
+      STARTER: 1,
+      PRO: 2,
+    };
+
+    const isDowngrade = planOrder[planCode] < planOrder[currentPlan];
+
+    if (isDowngrade) {
+      // Check if downgrade is allowed
+      const targetLimit = planLimits[planCode].installmentPlanLimit;
+
+      if (targetLimit !== null && tenant?.id) {
+        setLoadingPlan(planCode);
+        const result = await getActiveAndOverduePlanCount(tenant.id);
+        setLoadingPlan(null);
+
+        if (!result.success) {
+          setErrorMessage(result.error || "Failed to check plan limits.");
+          return;
+        }
+
+        const currentActivePlans = result.data || 0;
+
+        if (currentActivePlans > targetLimit) {
+          setErrorMessage(
+            `Cannot downgrade: You have ${currentActivePlans} active/overdue installment plans, but the ${planLabels[planCode]} plan limit is ${targetLimit}. Please complete or cancel some plans first.`
+          );
+          return;
+        }
+
+        setDowngradeWarning(
+          `You are downgrading from ${planLabels[currentPlan]} to ${planLabels[planCode]}. Your limits will be reduced.`
+        );
+      }
+
+      setPendingPlanCode(planCode);
+      setShowDowngradeDialog(true);
+      return;
+    }
+
+    // For upgrades, proceed directly
+    await handleUpgrade(planCode);
+  };
+
   const handleUpgrade = async (planCode: PlanCode) => {
     if (!paidPlans.includes(planCode)) {
       return;
@@ -173,6 +248,26 @@ export default function SubscriptionPricing() {
     }
   };
 
+  const confirmDowngrade = async () => {
+    setShowDowngradeDialog(false);
+    if (pendingPlanCode && paidPlans.includes(pendingPlanCode)) {
+      await handleUpgrade(pendingPlanCode);
+    }
+    setPendingPlanCode(null);
+    setDowngradeWarning(null);
+  };
+
+  const cancelDowngrade = () => {
+    setShowDowngradeDialog(false);
+    setPendingPlanCode(null);
+    setDowngradeWarning(null);
+  };
+
+  const currentPlanCode = subscription?.plan?.code;
+  const hasEverSubscribed = !!subscription?.provider_subscription_id;
+  const isTrialExpired = subscription?.isTrialExpired || false;
+  const canSelectFreePlan = !hasEverSubscribed && !isTrialExpired;
+
   return (
     <div className="mt-8 mb-16 max-w-5xl mx-auto">
       {trialExpired && (
@@ -195,7 +290,18 @@ export default function SubscriptionPricing() {
           <p className="mt-3 text-sm text-green-600">{successMessage}</p>
         )}
         {errorMessage && (
-          <p className="mt-3 text-sm text-red-600">{errorMessage}</p>
+          <Alert variant="destructive" className="mt-4 max-w-2xl mx-auto">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        {downgradeWarning && (
+          <Alert className="mt-4 max-w-2xl mx-auto border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-700">
+              {downgradeWarning}
+            </AlertDescription>
+          </Alert>
         )}
       </div>
 
@@ -265,10 +371,23 @@ export default function SubscriptionPricing() {
             </div>
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              disabled={!canSelectFreePlan || currentPlanCode === "FREE"}
+              className="inline-flex cursor-pointer items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-900"
+              title={
+                !canSelectFreePlan
+                  ? "Cannot return to free plan after subscribing"
+                  : currentPlanCode === "FREE"
+                  ? "Current plan"
+                  : ""
+              }
             >
-              Stay on Free
+              {currentPlanCode === "FREE" ? "Current Plan" : "Stay on Free"}
             </button>
+            {!canSelectFreePlan && currentPlanCode !== "FREE" && (
+              <p className="text-xs text-gray-500 mt-2">
+                Free plan not available after subscription
+              </p>
+            )}
           </div>
         </div>
 
@@ -337,12 +456,14 @@ export default function SubscriptionPricing() {
             </div>
             <button
               type="button"
-              onClick={() => handleUpgrade("STARTER")}
-              disabled={loadingPlan !== null}
-              className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => handlePlanClick("STARTER")}
+              disabled={loadingPlan !== null || currentPlanCode === "STARTER"}
+              className="inline-flex cursor-pointer items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-indigo-600"
             >
-              {loadingPlan === "STARTER"
-                ? "Redirecting..."
+              {currentPlanCode === "STARTER"
+                ? "Current Plan"
+                : loadingPlan === "STARTER"
+                ? "Checking..."
                 : `Upgrade to ${planLabels.STARTER}`}
             </button>
           </div>
@@ -413,17 +534,41 @@ export default function SubscriptionPricing() {
             </div>
             <button
               type="button"
-              onClick={() => handleUpgrade("PRO")}
-              disabled={loadingPlan !== null}
-              className="inline-flex items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => handlePlanClick("PRO")}
+              disabled={loadingPlan !== null || currentPlanCode === "PRO"}
+              className="inline-flex cursor-pointer items-center justify-center bg-gray-900 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-gray-900"
             >
-              {loadingPlan === "PRO"
-                ? "Redirecting..."
+              {currentPlanCode === "PRO"
+                ? "Current Plan"
+                : loadingPlan === "PRO"
+                ? "Checking..."
                 : `Upgrade to ${planLabels.PRO}`}
             </button>
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showDowngradeDialog} onOpenChange={setShowDowngradeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Downgrade</AlertDialogTitle>
+            <AlertDialogDescription>
+              {downgradeWarning}
+              <br />
+              <br />
+              Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDowngrade}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDowngrade}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
