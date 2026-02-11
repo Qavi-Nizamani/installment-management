@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { TrialExpiredBanner } from "@/components/layout/TrialExpiredBanner";
 import { UserStoreProvider } from "@/components/providers/UserStoreProvider";
 
 interface DashboardLayoutProps {
@@ -14,6 +15,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden lg:pl-16">
           <Header />
+          <TrialExpiredBanner />
           <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
             <div className=" mx-auto">
               {children}
