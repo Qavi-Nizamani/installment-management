@@ -39,6 +39,7 @@ CREATE POLICY "capital_ledger_insert_policy" ON capital_ledger
       AND m.tenant_id = capital_ledger.tenant_id
       AND m.role = 'OWNER'
     )
+    AND tenant_has_active_subscription(capital_ledger.tenant_id)
   );
 
 CREATE POLICY "capital_ledger_update_policy" ON capital_ledger
