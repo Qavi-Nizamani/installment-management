@@ -240,15 +240,15 @@ export async function createCustomer(
     const supabase = await createClient();
 
     // If not active/trialing subscription prevent creating customers
-    const { data: subscription, error: subscriptionError } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("tenant_id", resolvedTenantId)
-      .or("status.eq.active,status.eq.trialing")
-      .maybeSingle();
+    const { data: hasActiveSubscription, error: hasActiveSubscriptionError } =
+      await supabase.rpc("tenant_has_active_subscription", {
+        p_tenant_id: resolvedTenantId,
+      });
 
-    if (!subscription || subscriptionError) {
-      throw new Error(subscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION");
+    if (!hasActiveSubscription || hasActiveSubscriptionError) {
+      throw new Error(
+        hasActiveSubscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION",
+      );
     }
 
     const { data, error } = await supabase
