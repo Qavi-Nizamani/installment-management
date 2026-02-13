@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, AlertCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCapitalStore } from "@/store/capital.store";
 import CapitalStatsCards from "./CapitalStatsCards";
 import CapitalList from "./CapitalList";
@@ -14,10 +13,8 @@ export default function CapitalScreen() {
     entries,
     stats,
     isLoading,
-    error,
     fetchEntries,
     fetchStats,
-    clearError,
   } = useCapitalStore();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -43,19 +40,6 @@ export default function CapitalScreen() {
           Add Entry
         </Button>
       </div>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            {error}
-            <Button variant="outline" size="sm" onClick={clearError}>
-              Dismiss
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Stats Cards */}
       <CapitalStatsCards stats={stats} isLoading={isLoading} />

@@ -49,10 +49,8 @@ const requireTenantId = (tenantId?: string): string => {
  * Get all capital ledger entries for the authenticated user's tenant
  */
 export async function getCapitalEntries(
-  tenantId?: string
-): Promise<
-  ServiceResponse<CapitalLedgerEntry[]>
-> {
+  tenantId?: string,
+): Promise<ServiceResponse<CapitalLedgerEntry[]>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
@@ -90,11 +88,23 @@ export async function getCapitalEntries(
  */
 export async function createCapitalEntry(
   payload: CreateCapitalEntryPayload,
-  tenantId?: string
+  tenantId?: string,
 ): Promise<ServiceResponse<CapitalLedgerEntry>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
+
+    // If not active/trialing subscription prevent creating customers
+    const { data: hasActiveSubscription, error: hasActiveSubscriptionError } =
+      await supabase.rpc("tenant_has_active_subscription", {
+        p_tenant_id: resolvedTenantId,
+      });
+
+    if (!hasActiveSubscription || hasActiveSubscriptionError) {
+      throw new Error(
+        hasActiveSubscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION",
+      );
+    }
 
     if (
       (payload.type === "ADJUSTMENT" && payload.amount === 0) ||
@@ -136,7 +146,9 @@ export async function createCapitalEntry(
     console.error("Error in createCapitalEntry:", error);
     return {
       success: false,
-      error: "An unexpected error occurred. Please try again.",
+      error:
+        (error as Error)?.message ||
+        "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -178,8 +190,7 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
     // Principal portion per installment = finance_amount / total_months
     const principalPortion =
       Number(plan.finance_amount || 0) / plan.total_months;
-    capitalDeployed +=
-      paid < principalPortion ? principalPortion - paid : 0; // If installment is fully paid, principal is recovered
+    capitalDeployed += paid < principalPortion ? principalPortion - paid : 0; // If installment is fully paid, principal is recovered
   }
 
   return capitalDeployed;
@@ -189,10 +200,8 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
  * Get capital statistics (totals, balance, available funds)
  */
 export async function getCapitalStats(
-  tenantId?: string
-): Promise<
-  ServiceResponse<CapitalStats>
-> {
+  tenantId?: string,
+): Promise<ServiceResponse<CapitalStats>> {
   try {
     const resolvedTenantId = requireTenantId(tenantId);
     const [response, capitalDeployed] = await Promise.all([

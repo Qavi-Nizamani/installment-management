@@ -36,6 +36,7 @@ import {
 } from "@/services/capital/capital.service";
 import { useCapitalStore } from "@/store/capital.store";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const CapitalEntrySchema = z
   .object({
@@ -90,7 +91,7 @@ export default function AddCapitalEntryModal({
   onOpenChange,
 }: AddCapitalEntryModalProps) {
   const [isPending, startTransition] = useTransition();
-  const { createEntry, fetchEntries, fetchStats } = useCapitalStore();
+  const { error, createEntry, fetchEntries, fetchStats } = useCapitalStore();
 
   const form = useForm<CapitalEntryFormData>({
     resolver: zodResolver(CapitalEntrySchema),
@@ -118,11 +119,8 @@ export default function AddCapitalEntryModal({
           onOpenChange(false);
           await fetchEntries();
           await fetchStats();
-        } else {
-          toast.error("Failed to add entry. Please try again.");
         }
       } catch (error) {
-        toast.error("An unexpected error occurred. Please try again.");
         console.error("Error creating capital entry:", error);
       }
     });
@@ -227,6 +225,12 @@ export default function AddCapitalEntryModal({
               )}
             />
 
+            {/* show error message if there is an error */}
+            {error && (
+              <div className={cn("bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm")}>
+                {error.includes('NO_ACTIVE_SUBSCRIPTION') ? "You don't have an active subscription. Please subscribe to add capital entries." : error}
+              </div>
+            )}
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"

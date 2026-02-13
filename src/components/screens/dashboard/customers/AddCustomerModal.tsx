@@ -183,7 +183,7 @@ export default function AddCustomerModal({ open, onOpenChange }: AddCustomerModa
 
 
             {error && (
-              <div className={cn("bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm", error.includes('PLAN_LIMIT_EXCEEDED') ? 'bg-green-50 border-green-200 text-green-600 font-medium' : '')}>
+              <div className={cn("bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm")}>
                 {error.includes('NO_ACTIVE_SUBSCRIPTION') ? "You don't have an active subscription. Please subscribe to create customers." : error}
               </div>
             )}
