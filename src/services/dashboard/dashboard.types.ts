@@ -53,12 +53,26 @@ export interface CustomerWithPlans {
 
 // ==================== ACTIVITY LOG TYPES ====================
 
-/** Metadata shape for installments: installment_number, customer_id, customer_name, old/new amount, due_date, status, amount_paid */
+/** Change pair for audit metadata (only present when value changed) */
+export interface ActivityLogChange<T = unknown> {
+  old?: T;
+  new?: T;
+}
+
+/** Metadata: table-specific identifiers + optional "changes" (only fields that changed, { old, new }). Single values for INSERT/DELETE. Actor derived from user_id at display time. */
 export interface ActivityLogMetadata {
-  actor_email?: string;
+  /** New format: only keys that changed; value is { old, new } */
+  changes?: Record<string, ActivityLogChange>;
+  /** Installments: context */
   installment_number?: number;
   customer_id?: string;
   customer_name?: string;
+  /** Single values (INSERT/DELETE or legacy) */
+  amount_due?: number;
+  due_date?: string;
+  status?: string;
+  amount_paid?: number;
+  /** Legacy flat old/new (pre-021); formatter supports both */
   old_amount?: number;
   new_amount?: number;
   old_due_date?: string;
@@ -67,10 +81,8 @@ export interface ActivityLogMetadata {
   new_status?: string;
   old_amount_paid?: number;
   new_amount_paid?: number;
-  amount_due?: number;
-  due_date?: string;
-  status?: string;
-  amount_paid?: number;
+  /** Other table fields */
+  name?: string;
   [key: string]: unknown;
 }
 
@@ -79,6 +91,7 @@ export interface ActivityLogEntry {
   action: string;
   reference_type: string;
   reference_id: string | null;
+  user_id: string | null;
   metadata: ActivityLogMetadata;
   created_at: string;
 }

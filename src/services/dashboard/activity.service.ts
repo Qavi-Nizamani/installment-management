@@ -18,7 +18,7 @@ export async function getRecentActivity(
     const supabase = await createClient();
     const query = supabase
       .from("activity_logs")
-      .select("id, action, reference_type, reference_id, metadata, created_at")
+      .select("id, action, reference_type, reference_id, user_id, metadata, created_at")
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -33,6 +33,7 @@ export async function getRecentActivity(
       action: string;
       reference_type: string;
       reference_id: string | null;
+      user_id: string | null;
       metadata: ActivityLogMetadata | null;
       created_at: string;
     }) => ({
@@ -40,6 +41,7 @@ export async function getRecentActivity(
       action: row.action,
       reference_type: row.reference_type,
       reference_id: row.reference_id,
+      user_id: row.user_id ?? null,
       metadata: (row.metadata ?? {}) as ActivityLogMetadata,
       created_at: row.created_at,
     }));

@@ -39,6 +39,7 @@ export function ActivityFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const tenantId = useUserStore((state) => state.tenant?.id);
+  const currentUserId = useUserStore((state) => state.user?.id);
 
   useEffect(() => {
     async function fetchActivity() {
@@ -99,7 +100,7 @@ export function ActivityFeed() {
                 className={getActivityRowClasses(entry.action)}
               >
                 <p className="text-sm text-foreground flex-1 dark:text-foreground">
-                  {formatActivityMessage(entry)}
+                  {formatActivityMessage(entry, currentUserId)}
                 </p>
                 <span className="text-xs text-muted-foreground shrink-0">
                   {formatRelativeTime(entry.created_at)}
