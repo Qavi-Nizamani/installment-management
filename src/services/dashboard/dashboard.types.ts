@@ -50,3 +50,35 @@ export interface CustomerWithPlans {
   created_at: string;
   installment_plans?: PlanWithInstallments[];
 }
+
+// ==================== ACTIVITY LOG TYPES ====================
+
+/** Metadata shape for installments: installment_number, customer_id, customer_name, old/new amount, due_date, status, amount_paid */
+export interface ActivityLogMetadata {
+  actor_email?: string;
+  installment_number?: number;
+  customer_id?: string;
+  customer_name?: string;
+  old_amount?: number;
+  new_amount?: number;
+  old_due_date?: string;
+  new_due_date?: string;
+  old_status?: string;
+  new_status?: string;
+  old_amount_paid?: number;
+  new_amount_paid?: number;
+  amount_due?: number;
+  due_date?: string;
+  status?: string;
+  amount_paid?: number;
+  [key: string]: unknown;
+}
+
+export interface ActivityLogEntry {
+  id: string;
+  action: string;
+  reference_type: string;
+  reference_id: string | null;
+  metadata: ActivityLogMetadata;
+  created_at: string;
+}

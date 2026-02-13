@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { StatsCards } from "@/components/screens/dashboard/StatsCards";
 // import { RevenueChart } from "@/components/screens/dashboard/RevenueChart";
 import { RecentInstallments } from "@/components/screens/dashboard/RecentInstallments";
+import { ActivityFeed } from "@/components/screens/dashboard/ActivityFeed";
 // import { OverdueAlert } from "@/components/screens/dashboard/OverdueAlert";
 
 export const metadata: Metadata = {
@@ -26,10 +27,11 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <StatsCards />
 
-      {/* Charts and Tables */}
+      {/* Charts, Tables, and Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* <RevenueChart /> */}
         <RecentInstallments />
+        <ActivityFeed />
       </div>
     </div>
   );
