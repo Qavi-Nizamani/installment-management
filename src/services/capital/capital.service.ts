@@ -38,21 +38,13 @@ export interface ServiceResponse<T> {
   error?: string;
 }
 
-const requireTenantId = (tenantId?: string): string => {
-  if (!tenantId) {
-    throw new Error("Tenant context required");
-  }
-  return tenantId;
-};
-
 /**
  * Get all capital ledger entries for the authenticated user's tenant
  */
 export async function getCapitalEntries(
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<CapitalLedgerEntry[]>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -60,7 +52,7 @@ export async function getCapitalEntries(
       .select("*")
       .order("created_at", { ascending: false });
 
-    const { data, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error fetching capital entries:", error);
@@ -88,22 +80,22 @@ export async function getCapitalEntries(
  */
 export async function createCapitalEntry(
   payload: CreateCapitalEntryPayload,
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<CapitalLedgerEntry>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // If not active/trialing subscription prevent creating customers
     const { data: hasActiveSubscription, error: hasActiveSubscriptionError } =
       await supabase.rpc("tenant_has_active_subscription", {
-        p_tenant_id: resolvedTenantId,
+        p_tenant_id: tenantId,
       });
 
     if (!hasActiveSubscription || hasActiveSubscriptionError) {
-      throw new Error(
-        hasActiveSubscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION",
-      );
+      return {
+        success: false,
+        error: hasActiveSubscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION",
+      };
     }
 
     if (
@@ -122,7 +114,7 @@ export async function createCapitalEntry(
     const { data, error } = await supabase
       .from("capital_ledger")
       .insert({
-        tenant_id: resolvedTenantId,
+        tenant_id: tenantId,
         type: payload.type,
         amount: payload.amount,
         notes: payload.notes || null,
@@ -200,13 +192,12 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
  * Get capital statistics (totals, balance, available funds)
  */
 export async function getCapitalStats(
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<CapitalStats>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const [response, capitalDeployed] = await Promise.all([
-      getCapitalEntries(resolvedTenantId),
-      getCapitalDeployed(resolvedTenantId),
+      getCapitalEntries(tenantId),
+      getCapitalDeployed(tenantId),
     ]);
 
     if (!response.success || !response.data) {

@@ -60,21 +60,13 @@ export interface ServiceResponse<T> {
   error?: string;
 }
 
-const requireTenantId = (tenantId?: string): string => {
-  if (!tenantId) {
-    throw new Error("Tenant context required");
-  }
-  return tenantId;
-};
-
 /**
  * Get all customers for the authenticated user's tenant
  */
 export async function getCustomers(
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<Customer[]>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -83,7 +75,7 @@ export async function getCustomers(
       .order("created_at", { ascending: false });
 
     // Apply tenant filter for security
-    const { data, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error fetching customers:", error);
@@ -110,10 +102,9 @@ export async function getCustomers(
  * Get all customers with calculated stats (active plans, total spent)
  */
 export async function getCustomersWithStats(
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<CustomerWithStats[]>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     // Get customers with their installment plans data
@@ -138,7 +129,7 @@ export async function getCustomersWithStats(
       .order("created_at", { ascending: false });
 
     // Apply tenant filter for security
-    const { data, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error fetching customers with stats:", error);
@@ -197,15 +188,14 @@ export async function getCustomersWithStats(
  */
 export async function getCustomerById(
   id: string,
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<Customer>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase.from("customers").select("*").eq("id", id).single();
 
-    const { data, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error fetching customer:", error);
@@ -233,28 +223,28 @@ export async function getCustomerById(
  */
 export async function createCustomer(
   payload: CreateCustomerPayload,
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<Customer>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
-    // If not active/trialing subscription prevent creating customers
+    // If not active/trialing subscription prevent actions
     const { data: hasActiveSubscription, error: hasActiveSubscriptionError } =
       await supabase.rpc("tenant_has_active_subscription", {
-        p_tenant_id: resolvedTenantId,
+        p_tenant_id: tenantId,
       });
 
     if (!hasActiveSubscription || hasActiveSubscriptionError) {
-      throw new Error(
-        hasActiveSubscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION",
-      );
+      return {
+        success: false,
+        error: hasActiveSubscriptionError?.message || "NO_ACTIVE_SUBSCRIPTION",
+      };
     }
 
     const { data, error } = await supabase
       .from("customers")
       .insert({
-        tenant_id: resolvedTenantId, // Ensure customer belongs to user's tenant
+        tenant_id: tenantId, // Ensure customer belongs to user's tenant
         name: payload.name,
         phone: payload.phone,
         address: payload.address,
@@ -292,10 +282,9 @@ export async function createCustomer(
 export async function updateCustomer(
   id: string,
   payload: UpdateCustomerPayload,
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<Customer>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -308,7 +297,7 @@ export async function updateCustomer(
       .select()
       .single();
 
-    const { data, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error updating customer:", error);
@@ -336,15 +325,14 @@ export async function updateCustomer(
  */
 export async function deleteCustomer(
   id: string,
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<void>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase.from("customers").delete().eq("id", id);
 
-    const { error } = await withTenantFilter(query, resolvedTenantId);
+    const { error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error deleting customer:", error);
@@ -371,14 +359,13 @@ export async function deleteCustomer(
  */
 export async function searchCustomers(
   searchTerm: string,
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<Customer[]>> {
   if (!searchTerm.trim()) {
     return getCustomers(tenantId);
   }
 
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase
@@ -389,7 +376,7 @@ export async function searchCustomers(
       )
       .order("created_at", { ascending: false });
 
-    const { data, error } = await withTenantFilter(query, resolvedTenantId);
+    const { data, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error searching customers:", error);
@@ -416,18 +403,14 @@ export async function searchCustomers(
  * Get customer statistics (with tenant security)
  */
 export async function getCustomerStats(
-  tenantId?: string,
+  tenantId: string,
 ): Promise<ServiceResponse<CustomerStats>> {
   try {
-    const resolvedTenantId = requireTenantId(tenantId);
     const supabase = await createClient();
 
     const query = supabase.from("customers").select("*");
 
-    const { data: customers, error } = await withTenantFilter(
-      query,
-      resolvedTenantId,
-    );
+    const { data: customers, error } = await withTenantFilter(query, tenantId);
 
     if (error) {
       console.error("Error fetching customer stats:", error);

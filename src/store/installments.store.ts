@@ -1,18 +1,18 @@
-import { create } from 'zustand';
-import { 
+import { create } from "zustand";
+import {
   Installment,
   InstallmentStats,
   InstallmentSearchParams,
   UpdateInstallmentPayload,
-  MarkAsPaidPayload
-} from '@/types/installments/installments.types';
+  MarkAsPaidPayload,
+} from "@/types/installments/installments.types";
 import {
   getInstallments,
   updateInstallment,
   markAsPaid,
-  markAsPending
-} from '@/services/installments/installments.service';
-import { getInstallmentStats } from '@/services/installments/installments.analytics';
+  markAsPending,
+} from "@/services/installments/installments.service";
+import { getInstallmentStats } from "@/services/installments/installments.analytics";
 import { useUserStore } from "@/store/user.store";
 
 interface InstallmentsState {
@@ -20,22 +20,28 @@ interface InstallmentsState {
   installments: Installment[];
   stats: InstallmentStats | null;
   selectedInstallment: Installment | null;
-  
+
   // Loading states
   isLoading: boolean;
   isUpdating: boolean;
   isMarking: boolean;
   isSearching: boolean;
-  
+
   // UI states
   searchParams: InstallmentSearchParams;
   error: string | null;
-  
+
   // Actions
   fetchInstallments: (params?: InstallmentSearchParams) => Promise<void>;
   fetchInstallmentStats: () => Promise<void>;
-  updateExistingInstallment: (id: string, payload: UpdateInstallmentPayload) => Promise<boolean>;
-  markInstallmentAsPaid: (id: string, payload: MarkAsPaidPayload) => Promise<boolean>;
+  updateExistingInstallment: (
+    id: string,
+    payload: UpdateInstallmentPayload,
+  ) => Promise<boolean>;
+  markInstallmentAsPaid: (
+    id: string,
+    payload: MarkAsPaidPayload,
+  ) => Promise<boolean>;
   markInstallmentAsPending: (id: string, notes?: string) => Promise<boolean>;
   searchInstallments: (params: InstallmentSearchParams) => Promise<void>;
   setSelectedInstallment: (installment: Installment | null) => void;
@@ -64,26 +70,34 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
    */
   fetchInstallments: async (params: InstallmentSearchParams = {}) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({
+          installments: [],
+          isLoading: false,
+          error: "No tenant selected",
+        });
+        return;
+      }
       const response = await getInstallments(params, tenantId);
-      
+
       if (response.success) {
-        set({ 
-          installments: response.data || [], 
+        set({
+          installments: response.data || [],
           searchParams: params,
-          isLoading: false 
+          isLoading: false,
         });
       } else {
-        set({ 
-          installments: [], 
+        set({
+          installments: [],
           isLoading: false,
-          error: response.error || 'Failed to fetch installments'
+          error: response.error || "Failed to fetch installments",
         });
       }
     } catch {
-      set({ error: 'An unexpected error occurred', isLoading: false });
+      set({ error: "An unexpected error occurred", isLoading: false });
     }
   },
 
@@ -93,8 +107,12 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
   fetchInstallmentStats: async () => {
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ stats: null, isLoading: false, error: "No tenant selected" });
+        return;
+      }
       const response = await getInstallmentStats(tenantId);
-      
+
       if (response.success) {
         set({ stats: response.data || null });
       } else {
@@ -112,7 +130,7 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
           averagePaymentDelay: 3,
           collectionRate: 85,
         };
-        
+
         set({ stats: mockStats });
       }
     } catch {
@@ -130,7 +148,7 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
         averagePaymentDelay: 3,
         collectionRate: 85,
       };
-      
+
       set({ stats: mockStats });
     }
   },
@@ -138,24 +156,34 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
   /**
    * Updates an existing installment
    */
-  updateExistingInstallment: async (id: string, payload: UpdateInstallmentPayload): Promise<boolean> => {
+  updateExistingInstallment: async (
+    id: string,
+    payload: UpdateInstallmentPayload,
+  ): Promise<boolean> => {
     set({ isUpdating: true, error: null });
-    
+
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isUpdating: false, error: "No tenant selected" });
+        return false;
+      }
       const response = await updateInstallment(id, payload, tenantId);
-      
+
       if (response.success) {
         // Refresh installments to get updated data
         await get().fetchInstallments(get().searchParams);
         set({ isUpdating: false });
         return true;
       } else {
-        set({ error: response.error || 'Failed to update installment', isUpdating: false });
+        set({
+          error: response.error || "Failed to update installment",
+          isUpdating: false,
+        });
         return false;
       }
     } catch {
-      set({ error: 'An unexpected error occurred', isUpdating: false });
+      set({ error: "An unexpected error occurred", isUpdating: false });
       return false;
     }
   },
@@ -163,24 +191,34 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
   /**
    * Marks an installment as paid
    */
-  markInstallmentAsPaid: async (id: string, payload: MarkAsPaidPayload): Promise<boolean> => {
+  markInstallmentAsPaid: async (
+    id: string,
+    payload: MarkAsPaidPayload,
+  ): Promise<boolean> => {
     set({ isMarking: true, error: null });
-    
+
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isMarking: false, error: "No tenant selected" });
+        return false;
+      }
       const response = await markAsPaid(id, payload, tenantId);
-      
+
       if (response.success) {
         // Refresh installments to get updated data
         await get().fetchInstallments(get().searchParams);
         set({ isMarking: false });
         return true;
       } else {
-        set({ error: response.error || 'Failed to mark installment as paid', isMarking: false });
+        set({
+          error: response.error || "Failed to mark installment as paid",
+          isMarking: false,
+        });
         return false;
       }
     } catch {
-      set({ error: 'An unexpected error occurred', isMarking: false });
+      set({ error: "An unexpected error occurred", isMarking: false });
       return false;
     }
   },
@@ -188,24 +226,34 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
   /**
    * Marks an installment as pending
    */
-  markInstallmentAsPending: async (id: string, notes?: string): Promise<boolean> => {
+  markInstallmentAsPending: async (
+    id: string,
+    notes?: string,
+  ): Promise<boolean> => {
     set({ isMarking: true, error: null });
-    
+
     try {
       const tenantId = useUserStore.getState().tenant?.id;
-      const response = await markAsPending(id, notes, tenantId);
-      
+      if (!tenantId) {
+        set({ isMarking: false, error: "No tenant selected" });
+        return false;
+      }
+      const response = await markAsPending(id, tenantId, notes);
+
       if (response.success) {
         // Refresh installments to get updated data
         await get().fetchInstallments(get().searchParams);
         set({ isMarking: false });
         return true;
       } else {
-        set({ error: response.error || 'Failed to mark installment as pending', isMarking: false });
+        set({
+          error: response.error || "Failed to mark installment as pending",
+          isMarking: false,
+        });
         return false;
       }
     } catch {
-      set({ error: 'An unexpected error occurred', isMarking: false });
+      set({ error: "An unexpected error occurred", isMarking: false });
       return false;
     }
   },
@@ -215,26 +263,30 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
    */
   searchInstallments: async (params: InstallmentSearchParams) => {
     set({ isSearching: true, error: null });
-    
+
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isSearching: false, error: "No tenant selected" });
+        return;
+      }
       const response = await getInstallments(params, tenantId);
-      
+
       if (response.success) {
-        set({ 
-          installments: response.data || [], 
+        set({
+          installments: response.data || [],
           searchParams: params,
-          isSearching: false 
+          isSearching: false,
         });
       } else {
-        set({ 
-          installments: [], 
+        set({
+          installments: [],
           isSearching: false,
-          error: response.error || 'Failed to search installments'
+          error: response.error || "Failed to search installments",
         });
       }
     } catch {
-      set({ error: 'An unexpected error occurred', isSearching: false });
+      set({ error: "An unexpected error occurred", isSearching: false });
     }
   },
 
@@ -265,4 +317,4 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
   reset: () => {
     set(initialState);
   },
-})); 
+}));

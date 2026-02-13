@@ -30,8 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  MoreHorizontal, 
+import {
+  MoreHorizontal,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -83,7 +83,7 @@ const formatDate = (dateString: string): string => {
 };
 
 const isOverdue = (installment: Installment): boolean => {
-  return installment.status === 'OVERDUE' || 
+  return installment.status === 'OVERDUE' ||
     (installment.status === 'PENDING' && new Date(installment.due_date) < new Date());
 };
 
@@ -91,14 +91,14 @@ const isUpcoming = (installment: Installment): boolean => {
   const dueDate = new Date(installment.due_date);
   const today = new Date();
   const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  
-  return installment.status === 'PENDING' && 
-    dueDate >= today && 
+
+  return installment.status === 'PENDING' &&
+    dueDate >= today &&
     dueDate <= weekFromNow;
 };
 
-export function InstallmentsList({ 
-  installments, 
+export function InstallmentsList({
+  installments,
   loading,
   onInstallmentUpdated
 }: InstallmentsListProps) {
@@ -142,7 +142,7 @@ export function InstallmentsList({
         paid_on: new Date().toISOString().split('T')[0],
         notes: `Payment of ${fmtCurrency(parsedAmount)} recorded from installments page${noteDetail}`
       }, tenantId);
-      
+
       if (response.success) {
         onInstallmentUpdated();
         setPaymentDialogOpen(false);
@@ -167,10 +167,10 @@ export function InstallmentsList({
       }
       const response = await markAsPending(
         installmentId,
+        tenantId,
         'Marked as pending from installments page',
-        tenantId
       );
-      
+
       if (response.success) {
         onInstallmentUpdated();
       } else {
@@ -277,7 +277,7 @@ export function InstallmentsList({
                 const rowUpcoming = isUpcoming(installment);
 
                 return (
-                  <TableRow 
+                  <TableRow
                     key={installment.id}
                     className={`
                       ${rowOverdue ? 'bg-red-50 border-red-200' : ''}
@@ -301,7 +301,7 @@ export function InstallmentsList({
                         </div>
                       </div>
                     </TableCell>
-                    
+
                     <TableCell>
                       <div className="font-medium">{installment.plan_title}</div>
                       <div className="text-sm text-muted-foreground">
@@ -325,13 +325,13 @@ export function InstallmentsList({
                         </div>
                       )}
                     </TableCell>
-                    
+
                     <TableCell>
                       <div className="font-medium">
                         {fmtCurrency(installment.amount_due)}
                       </div>
                     </TableCell>
-                    
+
                     <TableCell>
                       <div className="font-medium text-green-600">
                         {fmtCurrency(installment.amount_paid)}
@@ -339,23 +339,22 @@ export function InstallmentsList({
                     </TableCell>
 
                     <TableCell>
-                      <div className={`font-medium ${
-                        (installment.remaining_due || 0) > 0 ? 'text-orange-600' : 'text-green-600'
-                      }`}>
+                      <div className={`font-medium ${(installment.remaining_due || 0) > 0 ? 'text-orange-600' : 'text-green-600'
+                        }`}>
                         {fmtCurrency(installment.remaining_due || 0)}
                       </div>
                     </TableCell>
-                    
+
                     <TableCell>
-                      <Badge 
-                        variant={statusConfig.variant} 
+                      <Badge
+                        variant={statusConfig.variant}
                         className={`flex items-center space-x-1 ${statusConfig.bgColor} ${statusConfig.color}`}
                       >
                         <StatusIcon className="w-3 h-3" />
                         <span>{statusConfig.label}</span>
                       </Badge>
                     </TableCell>
-                    
+
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -366,9 +365,9 @@ export function InstallmentsList({
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          
+
                           {installment.status !== 'PAID' && (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleMarkAsPaid(installment)}
                               className="text-green-600"
                             >
@@ -376,9 +375,9 @@ export function InstallmentsList({
                               Record Payment
                             </DropdownMenuItem>
                           )}
-                          
+
                           {installment.status === 'PAID' && (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleMarkAsPending(installment.id)}
                               className="text-yellow-600"
                             >
@@ -413,7 +412,7 @@ export function InstallmentsList({
                 <div>
                   Record payment for this installment. The installment will be marked as PAID regardless of the amount.
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   <div><strong>Customer:</strong> {selectedInstallment?.customer?.name}</div>
                   <div><strong>Plan:</strong> {selectedInstallment?.plan_title}</div>
@@ -464,7 +463,7 @@ export function InstallmentsList({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleConfirmPayment}
               disabled={isUpdating || !amountPaid || parseFloat(amountPaid) <= 0}
               className="bg-green-600 hover:bg-green-700"

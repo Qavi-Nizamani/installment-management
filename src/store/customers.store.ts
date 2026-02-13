@@ -70,6 +70,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ customers: [], isLoading: false, error: "No tenant selected" });
+        return;
+      }
       const response = await getCustomersWithStats(tenantId);
       
       console.log("response", response);
@@ -93,6 +97,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
   fetchCustomerStats: async () => {
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) return;
       const response = await getCustomerStats(tenantId);
       
       if (response.success) {
@@ -131,6 +136,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ error: "No tenant selected", isLoading: false });
+        return;
+      }
       const response = await getCustomerById(id, tenantId);
       
       if (response.success) {
@@ -151,6 +160,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isCreating: false, error: "No tenant selected" });
+        return false;
+      }
       const response = await createCustomer(payload, tenantId);
       
       if (response.success) {
@@ -176,6 +189,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isUpdating: false, error: "No tenant selected" });
+        return false;
+      }
       const response = await updateCustomer(id, payload, tenantId);
       
       if (response.success) {
@@ -204,6 +221,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isDeleting: false, error: "No tenant selected" });
+        return false;
+      }
       const response = await deleteCustomer(id, tenantId);
       
       if (response.success) {
@@ -239,6 +260,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
         await get().fetchCustomers();
       } else {
         const tenantId = useUserStore.getState().tenant?.id;
+        if (!tenantId) {
+          set({ isSearching: false, error: "No tenant selected" });
+          return;
+        }
         const response = await searchCustomers(term, tenantId);
         
         if (response.success) {

@@ -47,10 +47,11 @@ export async function getActiveAndOverduePlanCount(
 
     let activeOrOverdueCount = 0;
 
-    (plans || []).forEach((plan) => {
+    type PlanRow = { id: string; total_months: number; installments?: { status: string }[] };
+    (plans || []).forEach((plan: PlanRow) => {
       const installments = plan.installments || [];
       const paidInstallments = installments.filter(
-        (i) => i.status === "PAID"
+        (i: { status: string }) => i.status === "PAID"
       );
       const monthsPaid = paidInstallments.length;
 

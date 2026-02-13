@@ -39,6 +39,10 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
 
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ entries: [], isLoading: false, error: "No tenant selected" });
+        return;
+      }
       const response = await getCapitalEntries(tenantId);
 
       if (response.success) {
@@ -58,6 +62,7 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
   fetchStats: async () => {
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) return;
       const response = await getCapitalStats(tenantId);
 
       if (response.success) {
@@ -95,6 +100,10 @@ export const useCapitalStore = create<CapitalState>((set, get) => ({
 
     try {
       const tenantId = useUserStore.getState().tenant?.id;
+      if (!tenantId) {
+        set({ isCreating: false, error: "No tenant selected" });
+        return false;
+      }
       const response = await createCapitalEntry(payload, tenantId);
 
       if (response.success) {

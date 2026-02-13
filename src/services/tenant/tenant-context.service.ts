@@ -44,7 +44,10 @@ export async function getTenantContextSummary(): Promise<
       .eq("user_id", user.id)
       .single();
 
-    if (error || !member || !member.tenant) {
+    type MemberRow = { tenant_id: string; role: string; tenant: { id: string; name: string } };
+    const m = member as MemberRow | null;
+
+    if (error || !m || !m.tenant) {
       return {
         success: false,
         error: "No tenant membership found for this user.",
@@ -56,12 +59,12 @@ export async function getTenantContextSummary(): Promise<
       success: true,
       data: {
         member: {
-          tenantId: member.tenant_id,
-          role: member.role,
+          tenantId: m.tenant_id,
+          role: m.role,
         },
         tenant: {
-          id: member.tenant.id,
-          name: member.tenant.name,
+          id: m.tenant.id,
+          name: m.tenant.name,
         },
       },
     };
