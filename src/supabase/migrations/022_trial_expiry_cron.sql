@@ -24,6 +24,6 @@ $$;
 -- Schedule job to run every hour at minute 0
 SELECT cron.schedule(
   'expire-trials',
-  '0 0 * * *',
+  '0 */6 * * *',
   'SELECT expire_trials()'
 );
