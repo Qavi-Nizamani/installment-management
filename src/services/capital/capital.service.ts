@@ -23,11 +23,8 @@ export interface CreateCapitalEntryPayload {
 export interface CapitalStats {
   totalInvestment: number;
   totalWithdrawal: number;
-  totalAdjustment: number;
-  /** Owner equity = total owner investments only (cumulative; never decreases) */
+  /** Equity = Investments − Withdrawals */
   equity: number;
-  /** Current Balance = Investment - Withdrawal + Adjustment */
-  balance: number;
   /** Principal outstanding = capital deployed (from installments) */
   capitalDeployed: number;
   /** Cash Available = SUM(amount * direction) from cash_ledger (all types) */
@@ -303,9 +300,7 @@ export async function getCapitalStats(
     const stats: CapitalStats = {
       totalInvestment: 0,
       totalWithdrawal: 0,
-      totalAdjustment: 0,
       equity: 0,
-      balance: 0,
       capitalDeployed,
       availableFunds: 0,
       profitPaid,
@@ -319,15 +314,10 @@ export async function getCapitalStats(
         case "WITHDRAWAL":
           stats.totalWithdrawal += Number(entry.amount);
           break;
-        case "ADJUSTMENT":
-          stats.totalAdjustment += Number(entry.amount);
-          break;
       }
     }
 
-    stats.equity = stats.totalInvestment;
-    stats.balance =
-      stats.totalInvestment - stats.totalWithdrawal + stats.totalAdjustment;
+    stats.equity = stats.totalInvestment - stats.totalWithdrawal;
     stats.availableFunds = cashBalance;
 
     return {
