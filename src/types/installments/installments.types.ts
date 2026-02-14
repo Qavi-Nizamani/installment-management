@@ -60,7 +60,12 @@ export interface UpdateInstallmentPayload {
   notes?: string;
 }
 
+/**
+ * Payload for recording a single payment on an installment.
+ * amount_paid is the incremental amount for this payment (not the cumulative total).
+ */
 export interface MarkAsPaidPayload {
+  /** Incremental payment amount for this call (cash received this time). */
   amount_paid: number;
   paid_on: string;
   notes?: string;

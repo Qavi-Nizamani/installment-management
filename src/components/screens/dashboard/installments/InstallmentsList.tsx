@@ -43,6 +43,7 @@ import { useState } from "react";
 import { markAsPaid, markAsPending } from "@/services/installments/installments.service";
 import type { Installment, InstallmentStatus } from "@/types/installments/installments.types";
 import { INSTALLMENT_STATUS_CONFIGS } from "@/types/installments/installments.types";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fmtCurrency } from "@/components/utils/format";
 import { useUserStore } from "@/store/user.store";
 
@@ -110,7 +111,9 @@ export function InstallmentsList({
 
   const handleMarkAsPaid = (installment: Installment) => {
     setSelectedInstallment(installment);
-    setAmountPaid(installment.amount_due.toString());
+    // Prefill with remaining due so user sees the amount left (supports partial payments)
+    const remaining = installment.remaining_due ?? installment.amount_due - (installment.amount_paid ?? 0);
+    setAmountPaid(remaining > 0 ? remaining.toString() : installment.amount_due.toString());
     setPaymentDialogOpen(true);
   };
 
@@ -377,13 +380,20 @@ export function InstallmentsList({
                           )}
 
                           {installment.status === 'PAID' && (
-                            <DropdownMenuItem
-                              onClick={() => handleMarkAsPending(installment.id)}
-                              className="text-yellow-600"
-                            >
-                              <Clock className="mr-2 h-4 w-4" />
-                              Mark as Pending
-                            </DropdownMenuItem>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  onClick={() => handleMarkAsPending(installment.id)}
+                                  className="text-yellow-600"
+                                >
+                                  <Clock className="mr-2 h-4 w-4" />
+                                  Mark as Pending
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-xs">
+                                Resets status only. Cash ledger entries for this payment are not reversed.
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -410,13 +420,16 @@ export function InstallmentsList({
             <AlertDialogDescription asChild>
               <div className="space-y-4">
                 <div>
-                  Record payment for this installment. The installment will be marked as PAID regardless of the amount.
+                  Enter the amount received for this payment. You can record partial payments; the amount is added to what’s already paid. Full payment marks the installment as PAID.
                 </div>
 
                 <div className="space-y-2 text-sm">
                   <div><strong>Customer:</strong> {selectedInstallment?.customer?.name}</div>
                   <div><strong>Plan:</strong> {selectedInstallment?.plan_title}</div>
                   <div><strong>Amount Due:</strong> {fmtCurrency(selectedInstallment?.amount_due ?? 0)}</div>
+                  {(selectedInstallment?.amount_paid ?? 0) > 0 && (
+                    <div><strong>Paid so far:</strong> {fmtCurrency(selectedInstallment?.amount_paid ?? 0)} · <strong>Remaining:</strong> {fmtCurrency(selectedInstallment?.remaining_due ?? 0)}</div>
+                  )}
                   <div><strong>Due Date:</strong> {selectedInstallment?.due_date && formatDate(selectedInstallment.due_date)}</div>
                 </div>
 

@@ -224,11 +224,17 @@ export async function updateInstallment(
   }
 }
 
+/** Round to 2 decimals for money (matches NUMERIC(12,2)). */
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 /**
- * Mark installment as paid with advanced payment handling
- * - Full payment: marks current installment as PAID
- * - Partial payment: only updates amount_paid; status stays OVERDUE/PENDING, remaining stays on this installment
- * - Overpayment: excess amount reduces last installment
+ * Mark installment as paid with advanced payment handling.
+ * - payload.amount_paid is the incremental payment for this call (not cumulative total).
+ * - Allocation: profit first, then principal. Multiple partial payments accumulate correctly.
+ * - Full payment: marks installment as PAID. Partial: status OVERDUE, amount_due unchanged.
+ * - Overpayment: amount applied to this installment is capped at amount_due; cash_ledger still records full amount received.
  */
 export async function markAsPaid(
   installmentId: string,
@@ -236,9 +242,17 @@ export async function markAsPaid(
   tenantId: string,
 ): Promise<ServiceResponse<InstallmentRecord>> {
   try {
+    // Validation: cash_ledger has CHECK (amount > 0); reject before any DB write
+    const paymentAmount = roundMoney(Number(payload.amount_paid));
+    if (paymentAmount <= 0) {
+      return {
+        success: false,
+        error: "Payment amount must be greater than zero.",
+      };
+    }
+
     const supabase = await createClient();
 
-    // Get the current installment
     const { data: currentInstallment, error: fetchError } =
       await withTenantFilter(
         supabase
@@ -254,115 +268,82 @@ export async function markAsPaid(
       return { success: false, error: "Failed to fetch installment details" };
     }
 
-    const paymentAmount = payload.amount_paid;
-    const amountDue = currentInstallment.amount_due;
-    const principalDue =
-      currentInstallment.principal_due ?? currentInstallment.amount_due;
-    const profitDue = currentInstallment.profit_due ?? 0;
-    // Allocate payment to principal first, then profit
-    const principalPaid = Math.min(paymentAmount, principalDue);
-    const profitPaid = Math.min(
-      Math.max(0, paymentAmount - principalPaid),
-      profitDue,
-    );
+    const amountDue = Number(currentInstallment.amount_due);
+    const currentAmountPaid = Number(currentInstallment.amount_paid ?? 0);
+    if (currentAmountPaid >= amountDue) {
+      return {
+        success: false,
+        error: "Installment is already fully paid.",
+      };
+    }
 
-    // Full payment: mark as PAID. Partial: keep status (OVERDUE/PENDING) and amount_due unchanged.
-    const isFullPayment = paymentAmount >= amountDue;
+    const principalDue =
+      currentInstallment.principal_due != null
+        ? Number(currentInstallment.principal_due)
+        : amountDue;
+    const profitDue = Number(currentInstallment.profit_due ?? 0);
+    const currentPrincipalPaid = Number(
+      currentInstallment.principal_paid ?? 0,
+    );
+    const currentProfitPaid = Number(currentInstallment.profit_paid ?? 0);
+
+    // Cap at amount_due: overpayment is recorded in cash_ledger but installment only gets up to amount_due
+    const newAmountPaid = roundMoney(
+      Math.min(currentAmountPaid + paymentAmount, amountDue),
+    );
+    const amountToAllocate = roundMoney(newAmountPaid - currentAmountPaid);
+    if (amountToAllocate <= 0) {
+      return {
+        success: false,
+        error: "No additional amount can be applied to this installment.",
+      };
+    }
+
+    // Allocate increment: profit first, then principal (remainder to principal for rounding)
+    const remainingProfit = Math.max(0, profitDue - currentProfitPaid);
+    const remainingPrincipal = Math.max(0, principalDue - currentPrincipalPaid);
+    let profitIncrement = roundMoney(
+      Math.min(amountToAllocate, remainingProfit),
+    );
+    let principalIncrement = roundMoney(
+      Math.min(amountToAllocate - profitIncrement, remainingPrincipal),
+    );
+    // Ensure principal_paid + profit_paid <= amount_paid; allocate any rounding remainder to principal
+    const allocated = profitIncrement + principalIncrement;
+    if (allocated < amountToAllocate) {
+      principalIncrement = roundMoney(principalIncrement + (amountToAllocate - allocated));
+    }
+
+    const newPrincipalPaid = roundMoney(currentPrincipalPaid + principalIncrement);
+    const newProfitPaid = roundMoney(currentProfitPaid + profitIncrement);
+
+    const isFullPayment = newAmountPaid >= amountDue;
     const currentInstallmentUpdate: UpdateInstallmentPayload = {
-      amount_paid: paymentAmount,
-      principal_paid: principalPaid,
-      profit_paid: profitPaid,
+      amount_paid: newAmountPaid,
+      principal_paid: newPrincipalPaid,
+      profit_paid: newProfitPaid,
       status: isFullPayment
         ? ("PAID" as InstallmentStatus)
-        : ("currentInstallment.status" as InstallmentStatus),
+        : (currentInstallment.status as InstallmentStatus),
       paid_on: payload.paid_on,
       notes: payload.notes,
     };
 
-    // Partial payment: do not move remaining to next installment; leave amount_due and status as-is
-    if (paymentAmount < amountDue) {
-      // Only update amount_paid, principal_paid, profit_paid, paid_on, notes; status and amount_due stay unchanged
+    // Partial payment: status OVERDUE, do not change amount_due
+    if (!isFullPayment) {
       currentInstallmentUpdate.status = "OVERDUE" as InstallmentStatus;
-      await updateInstallment(
-        installmentId,
-        currentInstallmentUpdate,
-        tenantId,
-      );
-      // Record installment payment inflow in cash_ledger
-      await supabase.from("cash_ledger").insert({
-        tenant_id: tenantId,
-        type: "INSTALLMENT_PAYMENT",
-        amount: paymentAmount,
-        direction: 1,
-        reference_id: installmentId,
-        reference_type: "installment",
-        notes: payload.notes ?? null,
-      });
-      const { data } = await withTenantFilter(
-        supabase
-          .from("installments")
-          .select("*")
-          .eq("id", installmentId)
-          .single(),
-        tenantId,
-      );
-      return { success: true, data: data ?? currentInstallment };
     }
 
-    // Handle overpayment: reduce last installment
-    // else if (paymentAmount > amountDue) {
-    //   const excessAmount = paymentAmount - amountDue;
-
-    //   // Find last unpaid installment in the same plan
-    //   const { data: lastInstallments, error: lastError } = await withTenantFilter(
-    //     supabase
-    //       .from('installments')
-    //       .select('*')
-    //       .eq('installment_plan_id', planId)
-    //       .in('status', ['PENDING', 'OVERDUE'])
-    //       .order('due_date', { ascending: false })
-    //       .limit(1),
-    //     context.tenantId
-    //   );
-
-    //   if (lastError) {
-    //     console.error('Error fetching last installment:', lastError);
-    //     // Don't fail the whole transaction, just log the issue
-    //   } else if (lastInstallments && lastInstallments.length > 0) {
-    //     const lastInstallment = lastInstallments[0];
-
-    //     // Reduce the last installment by excess amount (but not below 0)
-    //     const newAmountDue = Math.max(0, lastInstallment.amount_due - excessAmount);
-    //     const lastInstallmentUpdate: UpdateInstallmentPayload = {
-    //       amount_due: newAmountDue,
-    //       notes: `${lastInstallment.notes || ''} [Reduced by $${Math.min(excessAmount, lastInstallment.amount_due).toLocaleString()} overpayment from earlier installment]`.trim()
-    //     };
-
-    //     // If the last installment is now fully paid by the excess
-    //     if (newAmountDue === 0) {
-    //       lastInstallmentUpdate.status = 'PAID' as InstallmentStatus;
-    //       lastInstallmentUpdate.amount_paid = lastInstallment.amount_due;
-    //       lastInstallmentUpdate.paid_on = payload.paid_on;
-    //     }
-
-    //     await updateInstallment(lastInstallment.id, lastInstallmentUpdate);
-
-    //     // Keep current installment's original amount_due (shows the overpayment clearly)
-    //   }
-    //   // If no last installment exists, keep original amount_due to show the overpayment
-    // }
-
-    // Update current installment
-    const currentUpdateResult = await updateInstallment(
+    const updateResult = await updateInstallment(
       installmentId,
       currentInstallmentUpdate,
       tenantId,
     );
-    if (!currentUpdateResult.success) {
-      return currentUpdateResult;
+    if (!updateResult.success) {
+      return updateResult;
     }
 
-    // Record installment payment inflow in cash_ledger
+    // Record actual cash received (incremental amount); cash_ledger amount must be > 0
     await supabase.from("cash_ledger").insert({
       tenant_id: tenantId,
       type: "INSTALLMENT_PAYMENT",
@@ -373,7 +354,15 @@ export async function markAsPaid(
       notes: payload.notes ?? null,
     });
 
-    return currentUpdateResult;
+    const { data } = await withTenantFilter(
+      supabase
+        .from("installments")
+        .select("*")
+        .eq("id", installmentId)
+        .single(),
+      tenantId,
+    );
+    return { success: true, data: data ?? currentInstallment };
   } catch (error) {
     console.error("Error in markAsPaid:", error);
     return { success: false, error: "Failed to process payment" };
@@ -381,7 +370,9 @@ export async function markAsPaid(
 }
 
 /**
- * Mark installment as pending
+ * Mark installment as pending.
+ * Note: This only updates the installment (status, paid_on, notes). It does not reverse or
+ * delete INSTALLMENT_PAYMENT rows in cash_ledger; the recorded cash inflow remains.
  */
 export async function markAsPending(
   installmentId: string,
