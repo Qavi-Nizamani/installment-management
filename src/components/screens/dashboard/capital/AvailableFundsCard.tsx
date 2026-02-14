@@ -58,7 +58,7 @@ export function AvailableFundsCard({ showLink = false, className, refreshTrigger
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Capital Balance − Capital Deployed (principal only)
+          Net cash from ledger (all movements)
           {showLink && (
             <>
               {" · "}

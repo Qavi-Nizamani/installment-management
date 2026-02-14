@@ -19,10 +19,14 @@ export interface InstallmentRecord {
   id: string;
   tenant_id: string;
   installment_plan_id: string;
-  installment_number: number;
+  installment_number?: number;
   due_date: string;
   amount_due: number;
   amount_paid: number;
+  principal_due?: number;
+  profit_due?: number;
+  principal_paid?: number;
+  profit_paid?: number;
   status: InstallmentStatus;
   paid_on?: string;
   notes?: string;
@@ -49,6 +53,8 @@ export interface Installment extends InstallmentRecord {
 export interface UpdateInstallmentPayload {
   amount_due?: number;
   amount_paid?: number;
+  principal_paid?: number;
+  profit_paid?: number;
   status?: InstallmentStatus;
   paid_on?: string;
   notes?: string;

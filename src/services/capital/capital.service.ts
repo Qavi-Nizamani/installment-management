@@ -24,11 +24,13 @@ export interface CapitalStats {
   totalInvestment: number;
   totalWithdrawal: number;
   totalAdjustment: number;
+  /** Owner equity = total owner investments only (cumulative; never decreases) */
+  equity: number;
   /** Current Balance = Investment - Withdrawal + Adjustment */
   balance: number;
-  /** Capital Deployed = principal outstanding only (finance amount, excludes profit) */
+  /** Principal outstanding = capital deployed (from installments) */
   capitalDeployed: number;
-  /** Available Funds = Capital Balance - Capital Deployed (rolling financed amount, profit excluded) */
+  /** Cash Available = SUM(amount * direction) from cash_ledger (all types) */
   availableFunds: number;
 }
 
@@ -39,7 +41,8 @@ export interface ServiceResponse<T> {
 }
 
 /**
- * Get all capital ledger entries for the authenticated user's tenant
+ * Get all capital ledger entries for the authenticated user's tenant.
+ * Reads from cash_ledger (owner-related types only) and maps to CapitalLedgerEntry.
  */
 export async function getCapitalEntries(
   tenantId: string,
@@ -48,8 +51,9 @@ export async function getCapitalEntries(
     const supabase = await createClient();
 
     const query = supabase
-      .from("capital_ledger")
+      .from("cash_ledger")
       .select("*")
+      .in("type", ["OWNER_INVESTMENT", "OWNER_WITHDRAWAL", "ADJUSTMENT"])
       .order("created_at", { ascending: false });
 
     const { data, error } = await withTenantFilter(query, tenantId);
@@ -62,9 +66,19 @@ export async function getCapitalEntries(
       };
     }
 
+    const rows = (data || []) as CashLedgerRow[];
+    const entries: CapitalLedgerEntry[] = rows.map((row) => ({
+      id: row.id,
+      tenant_id: row.tenant_id,
+      type: mapCashTypeToCapitalType(row.type),
+      amount: row.type === "ADJUSTMENT" ? Number(row.amount) * row.direction : Number(row.amount),
+      notes: row.notes ?? null,
+      created_at: row.created_at,
+    }));
+
     return {
       success: true,
-      data: (data || []) as CapitalLedgerEntry[],
+      data: entries,
     };
   } catch (error) {
     console.error("Error in getCapitalEntries:", error);
@@ -73,6 +87,24 @@ export async function getCapitalEntries(
       error: "An unexpected error occurred. Please try again.",
     };
   }
+}
+
+interface CashLedgerRow {
+  id: string;
+  tenant_id: string;
+  type: string;
+  amount: number;
+  direction: number;
+  notes: string | null;
+  created_at: string;
+}
+
+function mapCashTypeToCapitalType(
+  type: string,
+): "INVESTMENT" | "WITHDRAWAL" | "ADJUSTMENT" {
+  if (type === "OWNER_INVESTMENT") return "INVESTMENT";
+  if (type === "OWNER_WITHDRAWAL") return "WITHDRAWAL";
+  return "ADJUSTMENT";
 }
 
 /**
@@ -111,12 +143,25 @@ export async function createCapitalEntry(
       };
     }
 
+    const cashType =
+      payload.type === "INVESTMENT"
+        ? "OWNER_INVESTMENT"
+        : payload.type === "WITHDRAWAL"
+          ? "OWNER_WITHDRAWAL"
+          : "ADJUSTMENT";
+    const direction =
+      payload.type === "WITHDRAWAL" ? -1 : payload.type === "ADJUSTMENT" ? (payload.amount >= 0 ? 1 : -1) : 1;
+    const amount = Math.abs(payload.amount);
+
     const { data, error } = await supabase
-      .from("capital_ledger")
+      .from("cash_ledger")
       .insert({
         tenant_id: tenantId,
-        type: payload.type,
-        amount: payload.amount,
+        type: cashType,
+        amount,
+        direction,
+        reference_id: null,
+        reference_type: null,
         notes: payload.notes || null,
       })
       .select()
@@ -130,9 +175,17 @@ export async function createCapitalEntry(
       };
     }
 
+    const row = data as CashLedgerRow;
     return {
       success: true,
-      data: data as CapitalLedgerEntry,
+      data: {
+        id: row.id,
+        tenant_id: row.tenant_id,
+        type: mapCashTypeToCapitalType(row.type),
+        amount: row.type === "ADJUSTMENT" ? Number(row.amount) * row.direction : Number(row.amount),
+        notes: row.notes ?? null,
+        created_at: row.created_at,
+      },
     };
   } catch (error) {
     console.error("Error in createCapitalEntry:", error);
@@ -147,8 +200,7 @@ export async function createCapitalEntry(
 
 /**
  * Get capital deployed = principal outstanding only (excludes profit).
- * Each installment's principal portion = finance_amount / total_months.
- * For unpaid installments, that principal is still deployed.
+ * Uses installments.principal_due and principal_paid when present; otherwise falls back to plan finance_amount/total_months.
  */
 async function getCapitalDeployed(tenantId: string): Promise<number> {
   const supabase = await createClient();
@@ -158,6 +210,8 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
       `
       amount_due,
       amount_paid,
+      principal_due,
+      principal_paid,
       installment_plan:installment_plans!inner (
         finance_amount,
         total_months
@@ -172,32 +226,53 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
   for (const row of data || []) {
     const paid = Number(row.amount_paid || 0);
     const due = Number(row.amount_due || 0);
+    const principalDue = row.principal_due != null ? Number(row.principal_due) : null;
+    const principalPaid = row.principal_paid != null ? Number(row.principal_paid) : null;
     const planRef = row.installment_plan;
     const plan = Array.isArray(planRef) ? planRef[0] : planRef;
-    if (!plan || !plan.total_months || plan.total_months <= 0) continue;
 
     // If installment is fully paid, principal is recovered
     if (paid >= due) continue;
 
-    // Principal portion per installment = finance_amount / total_months
+    if (principalDue != null && principalPaid != null) {
+      capitalDeployed += Math.max(0, principalDue - principalPaid);
+      continue;
+    }
+
+    if (!plan || !plan.total_months || plan.total_months <= 0) continue;
     const principalPortion =
       Number(plan.finance_amount || 0) / plan.total_months;
-    capitalDeployed += paid < principalPortion ? principalPortion - paid : 0; // If installment is fully paid, principal is recovered
+    capitalDeployed += paid < principalPortion ? principalPortion - paid : 0;
   }
 
   return capitalDeployed;
 }
 
 /**
- * Get capital statistics (totals, balance, available funds)
+ * Get cash balance = SUM(amount * direction) from all cash_ledger rows for the tenant.
+ */
+async function getCashBalance(tenantId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await withTenantFilter(
+    supabase.from("cash_ledger").select("amount, direction"),
+    tenantId,
+  );
+  if (error) return 0;
+  const rows = (data || []) as { amount: number; direction: number }[];
+  return rows.reduce((sum, row) => sum + Number(row.amount) * Number(row.direction), 0);
+}
+
+/**
+ * Get capital statistics (totals, equity, balance, principal outstanding, cash available)
  */
 export async function getCapitalStats(
   tenantId: string,
 ): Promise<ServiceResponse<CapitalStats>> {
   try {
-    const [response, capitalDeployed] = await Promise.all([
+    const [response, capitalDeployed, cashBalance] = await Promise.all([
       getCapitalEntries(tenantId),
       getCapitalDeployed(tenantId),
+      getCashBalance(tenantId),
     ]);
 
     if (!response.success || !response.data) {
@@ -212,6 +287,7 @@ export async function getCapitalStats(
       totalInvestment: 0,
       totalWithdrawal: 0,
       totalAdjustment: 0,
+      equity: 0,
       balance: 0,
       capitalDeployed,
       availableFunds: 0,
@@ -231,10 +307,10 @@ export async function getCapitalStats(
       }
     }
 
+    stats.equity = stats.totalInvestment;
     stats.balance =
       stats.totalInvestment - stats.totalWithdrawal + stats.totalAdjustment;
-    // Available Funds = Capital Balance - Capital Deployed (principal only, profit excluded)
-    stats.availableFunds = stats.balance - stats.capitalDeployed;
+    stats.availableFunds = cashBalance;
 
     return {
       success: true,

@@ -158,6 +158,19 @@ export async function createInstallmentPlan(
     // Generate installment records for this plan
     await generateInstallmentRecords(plan.id, plan);
 
+    // Record principal deployed in cash_ledger (outflow)
+    if (plan.finance_amount > 0) {
+      await supabase.from("cash_ledger").insert({
+        tenant_id: tenantId,
+        type: "PRINCIPAL_DEPLOYED",
+        amount: plan.finance_amount,
+        direction: -1,
+        reference_id: plan.id,
+        reference_type: "installment_plan",
+        notes: null,
+      });
+    }
+
     return {
       success: true,
       data: plan,
@@ -499,6 +512,8 @@ async function generateInstallmentRecords(
       plan.monthly_percentage,
       plan.total_months,
     );
+    const principalDue = plan.total_months > 0 ? plan.finance_amount / plan.total_months : 0;
+    const profitDue = monthlyAmount - principalDue;
     const startDate = new Date(plan.start_date);
 
     const installments = [];
@@ -519,6 +534,10 @@ async function generateInstallmentRecords(
         tenant_id: plan.tenant_id,
         due_date: dueDateStr,
         amount_due: monthlyAmount,
+        principal_due: principalDue,
+        profit_due: profitDue,
+        principal_paid: 0,
+        profit_paid: 0,
         status,
       });
     }

@@ -39,6 +39,7 @@ function refTypeLabel(referenceType: string): string {
     installment_plans: "Installment plan",
     installments: "Installment",
     capital_ledger: "Capital entry",
+    cash_ledger: "Cash entry",
     limits_usage: "Limits",
     billing_webhook_events: "Webhook",
   };

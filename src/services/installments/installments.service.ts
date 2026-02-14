@@ -256,12 +256,22 @@ export async function markAsPaid(
 
     const paymentAmount = payload.amount_paid;
     const amountDue = currentInstallment.amount_due;
-    // const planId = currentInstallment.installment_plan_id;
+    const principalDue =
+      currentInstallment.principal_due ?? currentInstallment.amount_due;
+    const profitDue = currentInstallment.profit_due ?? 0;
+    // Allocate payment to principal first, then profit
+    const principalPaid = Math.min(paymentAmount, principalDue);
+    const profitPaid = Math.min(
+      Math.max(0, paymentAmount - principalPaid),
+      profitDue,
+    );
 
     // Full payment: mark as PAID. Partial: keep status (OVERDUE/PENDING) and amount_due unchanged.
     const isFullPayment = paymentAmount >= amountDue;
     const currentInstallmentUpdate: UpdateInstallmentPayload = {
       amount_paid: paymentAmount,
+      principal_paid: principalPaid,
+      profit_paid: profitPaid,
       status: isFullPayment
         ? ("PAID" as InstallmentStatus)
         : ("currentInstallment.status" as InstallmentStatus),
@@ -271,13 +281,23 @@ export async function markAsPaid(
 
     // Partial payment: do not move remaining to next installment; leave amount_due and status as-is
     if (paymentAmount < amountDue) {
-      // Only update amount_paid, paid_on, notes; status and amount_due stay unchanged
+      // Only update amount_paid, principal_paid, profit_paid, paid_on, notes; status and amount_due stay unchanged
       currentInstallmentUpdate.status = "OVERDUE" as InstallmentStatus;
       await updateInstallment(
         installmentId,
         currentInstallmentUpdate,
         tenantId,
       );
+      // Record installment payment inflow in cash_ledger
+      await supabase.from("cash_ledger").insert({
+        tenant_id: tenantId,
+        type: "INSTALLMENT_PAYMENT",
+        amount: paymentAmount,
+        direction: 1,
+        reference_id: installmentId,
+        reference_type: "installment",
+        notes: payload.notes ?? null,
+      });
       const { data } = await withTenantFilter(
         supabase
           .from("installments")
@@ -341,6 +361,17 @@ export async function markAsPaid(
     if (!currentUpdateResult.success) {
       return currentUpdateResult;
     }
+
+    // Record installment payment inflow in cash_ledger
+    await supabase.from("cash_ledger").insert({
+      tenant_id: tenantId,
+      type: "INSTALLMENT_PAYMENT",
+      amount: paymentAmount,
+      direction: 1,
+      reference_id: installmentId,
+      reference_type: "installment",
+      notes: payload.notes ?? null,
+    });
 
     return currentUpdateResult;
   } catch (error) {
