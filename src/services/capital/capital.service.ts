@@ -32,6 +32,8 @@ export interface CapitalStats {
   capitalDeployed: number;
   /** Cash Available = SUM(amount * direction) from cash_ledger (all types) */
   availableFunds: number;
+  /** Profit received = sum(profit_paid) from installments */
+  profitPaid: number;
 }
 
 export interface ServiceResponse<T> {
@@ -249,6 +251,20 @@ async function getCapitalDeployed(tenantId: string): Promise<number> {
 }
 
 /**
+ * Get total profit paid = sum(profit_paid) from installments for the tenant.
+ */
+async function getProfitPaid(tenantId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await withTenantFilter(
+    supabase.from("installments").select("profit_paid"),
+    tenantId,
+  );
+  if (error) return 0;
+  const rows = (data || []) as { profit_paid: number | null }[];
+  return rows.reduce((sum, row) => sum + Number(row.profit_paid ?? 0), 0);
+}
+
+/**
  * Get cash balance = SUM(amount * direction) from all cash_ledger rows for the tenant.
  */
 async function getCashBalance(tenantId: string): Promise<number> {
@@ -269,10 +285,11 @@ export async function getCapitalStats(
   tenantId: string,
 ): Promise<ServiceResponse<CapitalStats>> {
   try {
-    const [response, capitalDeployed, cashBalance] = await Promise.all([
+    const [response, capitalDeployed, cashBalance, profitPaid] = await Promise.all([
       getCapitalEntries(tenantId),
       getCapitalDeployed(tenantId),
       getCashBalance(tenantId),
+      getProfitPaid(tenantId),
     ]);
 
     if (!response.success || !response.data) {
@@ -291,6 +308,7 @@ export async function getCapitalStats(
       balance: 0,
       capitalDeployed,
       availableFunds: 0,
+      profitPaid,
     };
 
     for (const entry of entries) {
